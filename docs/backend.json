@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -253,6 +254,42 @@
         "amount",
         "date",
         "category"
+      ]
+    },
+     "NetWorth": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "NetWorth",
+      "type": "object",
+      "description": "Represents the user's net worth at a point in time.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the NetWorth record."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date the net worth was calculated.",
+          "format": "date-time"
+        },
+        "totalAssets": {
+          "type": "number",
+          "description": "The total value of all assets."
+        },
+        "totalLiabilities": {
+          "type": "number",
+          "description": "The total value of all liabilities."
+        },
+        "netWorth": {
+          "type": "number",
+          "description": "The calculated net worth (Assets - Liabilities)."
+        }
+      },
+      "required": [
+        "id",
+        "date",
+        "totalAssets",
+        "totalLiabilities",
+        "netWorth"
       ]
     }
   },
