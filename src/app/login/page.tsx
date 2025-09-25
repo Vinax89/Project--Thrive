@@ -2,13 +2,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/firebase/provider';
+import { useAuth, useFirestore } from '@/firebase/provider';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  UserCredential,
 } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
 
   const [loginEmail, setLoginEmail] = useState('');
@@ -33,11 +36,28 @@ export default function LoginPage() {
   const [signUpPassword, setSignUpPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  const createUserProfile = async (userCredential: UserCredential) => {
+    if (!firestore) return;
+    const user = userCredential.user;
+    const userRef = doc(firestore, 'users', user.uid);
+    const userData = {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      createdAt: serverTimestamp(),
+      lastLogin: serverTimestamp(),
+    };
+    await setDoc(userRef, userData, { merge: true });
+  };
+
+
   const handleEmailPasswordSignUp = async () => {
     if (!auth) return;
     setError(null);
     try {
-      await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
+      const userCredential = await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
+      await createUserProfile(userCredential);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
@@ -48,7 +68,11 @@ export default function LoginPage() {
     if (!auth) return;
     setError(null);
     try {
-      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+      if (firestore && userCredential.user) {
+        const userRef = doc(firestore, 'users', userCredential.user.uid);
+        await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
+      }
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
@@ -60,7 +84,8 @@ export default function LoginPage() {
     setError(null);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const userCredential = await signInWithPopup(auth, provider);
+      await createUserProfile(userCredential);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
