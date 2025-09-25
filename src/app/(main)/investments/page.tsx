@@ -31,12 +31,18 @@ import {
 } from "@/components/ui/dialog";
 import { PlusCircle, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { collection } from "firebase/firestore";
 
 export default function InvestmentsPage() {
   const { user } = useUser();
-  const { data: investments = [], add, remove } = useCollection<Investment>(
-    user ? `users/${user.uid}/investments` : null
+  const firestore = useFirestore();
+
+  const investmentsColRef = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, `users/${user.uid}/investments`) : null),
+    [user, firestore]
   );
+  const { data: investments = [], add, remove } = useCollection<Investment>(investmentsColRef);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newInvestmentName, setNewInvestmentName] = useState("");

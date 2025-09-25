@@ -27,6 +27,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { doc } from 'firebase/firestore';
 
 const profileFormSchema = z.object({
   displayName: z.string().min(2, {
@@ -42,9 +44,14 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfilePage() {
   const { user } = useUser();
-  const { data: profile, update, loading } = useDoc<UserProfile>(
-    user ? `users/${user.uid}` : null
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(
+    () => (user && firestore ? doc(firestore, `users/${user.uid}`) : null),
+    [user, firestore]
   );
+  const { data: profile, update, loading } = useDoc<UserProfile>(userDocRef);
+
   const { toast } = useToast();
 
   const form = useForm<ProfileFormValues>({

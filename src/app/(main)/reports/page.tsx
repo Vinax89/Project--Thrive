@@ -7,11 +7,25 @@ import type { Transaction, UserProfile } from '@/lib/types';
 import { CashFlowLineChart } from '@/components/cash-flow-line-chart';
 import { SpendingBarChart } from '@/components/spending-bar-chart';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { collection, doc } from 'firebase/firestore';
 
 export default function ReportsPage() {
   const { user } = useUser();
-  const { data: profile } = useDoc<UserProfile>(user ? `users/${user.uid}` : null);
-  const { data: transactions = [], loading } = useCollection<Transaction>(user ? `users/${user.uid}/transactions` : null);
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(
+    () => (user && firestore ? doc(firestore, `users/${user.uid}`) : null),
+    [user, firestore]
+  );
+  const { data: profile } = useDoc<UserProfile>(userDocRef);
+
+  const transactionsColRef = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, `users/${user.uid}/transactions`) : null),
+    [user, firestore]
+  );
+  const { data: transactions = [], loading } = useCollection<Transaction>(transactionsColRef);
+
 
   if (loading) {
     return <p>Loading reports...</p>

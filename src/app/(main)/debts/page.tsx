@@ -26,10 +26,19 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PlusCircle, Trash2 } from "lucide-react";
+import { useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { collection } from "firebase/firestore";
 
 export default function DebtsPage() {
   const { user } = useUser();
-  const { data: debts = [], add, remove } = useCollection<Debt>(user ? `users/${user.uid}/debts` : null);
+  const firestore = useFirestore();
+
+  const debtsColRef = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, `users/${user.uid}/debts`) : null),
+    [user, firestore]
+  );
+  const { data: debts = [], add, remove } = useCollection<Debt>(debtsColRef);
+
   const totalDebt = debts.reduce((sum, debt) => sum + debt.amount, 0);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);

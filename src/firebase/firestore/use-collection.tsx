@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -52,7 +53,7 @@ export interface InternalQuery extends Query<DocumentData> {
  * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
  */
 export function useCollection<T = any>(
-    memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
+    memoizedTargetRefOrQuery: (((CollectionReference<DocumentData> | Query<DocumentData>))  | null | undefined) & {__memo?: boolean},
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
@@ -67,6 +68,10 @@ export function useCollection<T = any>(
       setIsLoading(false);
       setError(null);
       return;
+    }
+
+    if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
+        throw new Error('Reference ' + memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
     }
 
     setIsLoading(true);
@@ -107,8 +112,6 @@ export function useCollection<T = any>(
 
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
-  if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
-    throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
-  }
+  
   return { data, isLoading, error };
 }

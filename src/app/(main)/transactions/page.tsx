@@ -40,12 +40,19 @@ import { CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { collection } from "firebase/firestore";
 
 export default function TransactionsPage() {
   const { user } = useUser();
-  const { data: transactions = [], add, remove } = useCollection<Transaction>(
-    user ? `users/${user.uid}/transactions` : null
+  const firestore = useFirestore();
+
+  const transactionsColRef = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, `users/${user.uid}/transactions`) : null),
+    [user, firestore]
   );
+  const { data: transactions = [], add, remove } = useCollection<Transaction>(transactionsColRef);
+
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newTransactionName, setNewTransactionName] = useState("");

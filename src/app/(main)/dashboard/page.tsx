@@ -35,6 +35,8 @@ import { getCashFlowAdviceAction, type FormState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { collection, doc } from "firebase/firestore";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -49,9 +51,26 @@ function SubmitButton() {
 
 export default function DashboardPage() {
   const { user } = useUser();
-  const { data: profile } = useDoc<UserProfile>(user ? `users/${user.uid}` : null);
-  const { data: transactions = [] } = useCollection<Transaction>(user ? `users/${user.uid}/transactions` : null);
-  const { data: debts = [] } = useCollection<Debt>(user ? `users/${user.uid}/debts` : null);
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(
+    () => (user && firestore ? doc(firestore, `users/${user.uid}`) : null),
+    [user, firestore]
+  );
+  const { data: profile } = useDoc<UserProfile>(userDocRef);
+
+  const transactionsColRef = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, `users/${user.uid}/transactions`) : null),
+    [user, firestore]
+  );
+  const { data: transactions = [] } = useCollection<Transaction>(transactionsColRef);
+
+  const debtsColRef = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, `users/${user.uid}/debts`) : null),
+    [user, firestore]
+  );
+  const { data: debts = [] } = useCollection<Debt>(debtsColRef);
+
 
   const initialState: FormState = { message: "" };
   const [state, formAction] = useActionState(getCashFlowAdviceAction, initialState);

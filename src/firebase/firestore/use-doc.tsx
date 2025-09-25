@@ -1,3 +1,4 @@
+
 'use client';
     
 import { useState, useEffect } from 'react';
@@ -39,7 +40,7 @@ export interface UseDocResult<T> {
  * @returns {UseDocResult<T>} Object with data, isLoading, error.
  */
 export function useDoc<T = any>(
-  memoizedDocRef: DocumentReference<DocumentData> | null | undefined,
+  memoizedDocRef: (DocumentReference<DocumentData> | null | undefined) & {__memo?: boolean},
 ): UseDocResult<T> {
   type StateDataType = WithId<T> | null;
 
@@ -53,6 +54,9 @@ export function useDoc<T = any>(
       setIsLoading(false);
       setError(null);
       return;
+    }
+     if(memoizedDocRef && !memoizedDocRef.__memo) {
+        throw new Error('Reference ' + memoizedDocRef + ' was not properly memoized using useMemoFirebase');
     }
 
     setIsLoading(true);

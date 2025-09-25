@@ -15,33 +15,29 @@ import {
   Query,
   type WithFieldValue
 } from 'firebase/firestore';
-import { useFirestore } from '../provider';
+import { useFirestore, useMemoFirebase } from '../provider';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
 
 
-// Helper to stabilize reference objects
-function useMemoizedRef<T extends DocumentReference | CollectionReference | Query | null>(ref: T): T {
-  const refString = ref ? ('path' in ref ? ref.path : 'id' in ref ? ref.id : '') : '';
-  return useMemo(() => ref, [refString]);
-}
-
-export function useDoc<T>(path: string | null) {
+export function useDoc<T>(memoizedDocRef: (DocumentReference | null) & {__memo?: boolean}) {
   const firestore = useFirestore();
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const docRef = useMemoizedRef(path && firestore ? doc(firestore, path) : null);
-
   useEffect(() => {
-    if (!docRef) {
+    if (!memoizedDocRef) {
       setLoading(false);
+      setData(null);
       return;
+    }
+     if(memoizedDocRef && !memoizedDocRef.__memo) {
+        throw new Error(memoizedDocRef + ' was not properly memoized using useMemoFirebase');
     }
 
     const unsubscribe = onSnapshot(
-      docRef,
+      memoizedDocRef,
       (snapshot) => {
         if (snapshot.exists()) {
           setData({ id: snapshot.id, ...snapshot.data() } as T);
@@ -52,7 +48,7 @@ export function useDoc<T>(path: string | null) {
       },
       (err) => {
         const permissionError = new FirestorePermissionError({
-          path: docRef.path,
+          path: memoizedDocRef.path,
           operation: 'get',
         } satisfies SecurityRuleContext);
         errorEmitter.emit('permission-error', permissionError);
@@ -62,14 +58,14 @@ export function useDoc<T>(path: string | null) {
     );
 
     return () => unsubscribe();
-  }, [docRef]);
+  }, [memoizedDocRef]);
 
   const update = async (newData: Partial<T>) => {
-    if (!docRef) return;
-    updateDoc(docRef, { ...newData, updatedAt: serverTimestamp() })
+    if (!memoizedDocRef) return;
+    updateDoc(memoizedDocRef, { ...newData, updatedAt: serverTimestamp() })
     .catch((serverError) => {
       const permissionError = new FirestorePermissionError({
-          path: docRef.path,
+          path: memoizedDocRef.path,
           operation: 'update',
           requestResourceData: newData,
       } satisfies SecurityRuleContext);
@@ -80,22 +76,24 @@ export function useDoc<T>(path: string | null) {
   return { data, loading, error, update };
 }
 
-export function useCollection<T>(path: string | null) {
+export function useCollection<T>(memoizedCollectionRef: (CollectionReference | Query | null) & {__memo?: boolean}) {
   const firestore = useFirestore();
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
-  const collectionRef = useMemoizedRef(path && firestore ? collection(firestore, path) : null);
-
   useEffect(() => {
-    if (!collectionRef) {
+    if (!memoizedCollectionRef) {
       setLoading(false);
+      setData([]);
       return;
+    }
+    if(memoizedCollectionRef && !memoizedCollectionRef.__memo) {
+        throw new Error(memoizedCollectionRef + ' was not properly memoized using useMemoFirebase');
     }
 
     const unsubscribe = onSnapshot(
-      collectionRef,
+      memoizedCollectionRef,
       (snapshot) => {
         const items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as T));
         setData(items);
@@ -103,7 +101,7 @@ export function useCollection<T>(path: string | null) {
       },
       (err) => {
         const permissionError = new FirestorePermissionError({
-          path: collectionRef.path,
+          path: 'path' in memoizedCollectionRef ? memoizedCollectionRef.path : 'toString()',
           operation: 'list',
         } satisfies SecurityRuleContext);
         errorEmitter.emit('permission-error', permissionError);
@@ -113,15 +111,15 @@ export function useCollection<T>(path: string | null) {
     );
 
     return () => unsubscribe();
-  }, [collectionRef]);
+  }, [memoizedCollectionRef]);
 
   const add = async (newItem: WithFieldValue<Omit<T, 'id'>>) => {
-    if (!collectionRef) return;
+    if (!memoizedCollectionRef || !('path' in memoizedCollectionRef)) return;
     const data = { ...newItem, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
-    addDoc(collectionRef, data)
+    addDoc(memoizedCollectionRef as CollectionReference, data)
     .catch((serverError) => {
       const permissionError = new FirestorePermissionError({
-          path: collectionRef.path,
+          path: (memoizedCollectionRef as CollectionReference).path,
           operation: 'create',
           requestResourceData: data,
       } satisfies SecurityRuleContext);
@@ -130,8 +128,8 @@ export function useCollection<T>(path: string | null) {
   };
 
   const update = async (id: string, updatedData: Partial<T>) => {
-    if (!path || !firestore) return;
-    const docRef = doc(firestore, path, id);
+    if (!memoizedCollectionRef || !('path' in memoizedCollectionRef) || !firestore) return;
+    const docRef = doc(firestore, (memoizedCollectionRef as CollectionReference).path, id);
     const data = { ...updatedData, updatedAt: serverTimestamp() };
     updateDoc(docRef, data)
     .catch((serverError) => {
@@ -145,8 +143,8 @@ export function useCollection<T>(path: string | null) {
   };
   
   const remove = async (id: string) => {
-    if (!path || !firestore) return;
-    const docRef = doc(firestore, path, id);
+    if (!memoizedCollectionRef || !('path' in memoizedCollectionRef) || !firestore) return;
+    const docRef = doc(firestore, (memoizedCollectionRef as CollectionReference).path, id);
     deleteDoc(docRef)
     .catch((serverError) => {
         const permissionError = new FirestorePermissionError({

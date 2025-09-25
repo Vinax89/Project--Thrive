@@ -23,6 +23,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal, Sparkles, UploadCloud, PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { collection } from "firebase/firestore";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -50,7 +52,13 @@ export function ReceiptScanner() {
   }, [state.category]);
 
   const { user } = useUser();
-  const { add: addTransaction } = useCollection<Transaction>(user ? `users/${user.uid}/transactions` : null);
+  const firestore = useFirestore();
+
+  const transactionsColRef = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, `users/${user.uid}/transactions`) : null),
+    [user, firestore]
+  );
+  const { add: addTransaction } = useCollection<Transaction>(transactionsColRef);
 
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,8 +103,7 @@ export function ReceiptScanner() {
           </CardHeader>
           <CardContent>
             <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Label htmlFor="receipt-upload" className="sr-only">Upload Receipt</Label>
-              <Input
+              <Label htmlFor="receipt-upload" className="sr-only">Upload Receipt</Label>              <Input
                 id="receipt-upload"
                 type="file"
                 accept="image/*"
