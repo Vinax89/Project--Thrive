@@ -1,12 +1,5 @@
 'use server';
 
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
-import { adminApp } from '@/firebase/admin'; // Assuming you have an admin app initialization
-import { headers } from 'next/headers';
-import { initializeFirebase } from '@/firebase';
-
-
 async function getUserId() {
     // This is a placeholder for getting the user ID on the server.
     // In a real app, you would get this from the session or by verifying an auth token.
@@ -20,17 +13,6 @@ async function getUserId() {
     return null;
 }
 
-// A helper function to safely get documents from a collection
-async function getCollectionData(db: FirebaseFirestore.Firestore, path: string) {
-    try {
-        const snapshot = await db.collection(path).get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (e) {
-        console.error(`Failed to fetch collection at ${path}:`, e);
-        return [];
-    }
-}
-
 export type FormState = {
   message: string;
   jsonData?: string;
@@ -38,7 +20,6 @@ export type FormState = {
 };
 
 // This server action will fetch all data for the user and return it as a JSON string.
-// Note: This uses firebase-admin, which should only be run on the server.
 export async function exportDataAction(
   prevState: FormState,
   formData: FormData
@@ -70,49 +51,6 @@ export async function exportDataAction(
             message: 'Data export is not fully implemented. Secure server-side user identification is required.',
             error: true,
         };
-
-        /*
-        // --- START: Example of what the real logic would look like with firebase-admin ---
-        // This code will not run because firebase-admin is not configured.
-        
-        const auth = getAuth(adminApp);
-        const db = getFirestore(adminApp);
-        
-        // You would get the user ID from a verified token or session
-        const userId = 'REPLACE_WITH_SECURELY_OBTAINED_USER_ID';
-
-        if (!userId) {
-            return { message: 'Authentication error: Could not verify user.', error: true };
-        }
-
-        const userProfileSnap = await db.doc(`users/${userId}`).get();
-        const userProfile = userProfileSnap.exists ? { id: userProfileSnap.id, ...userProfileSnap.data() } : null;
-
-        const [transactions, debts, budgetCategories, investments, alerts] = await Promise.all([
-            getCollectionData(db, `users/${userId}/transactions`),
-            getCollectionData(db, `users/${userId}/debts`),
-            getCollectionData(db, `users/${userId}/budgetCategories`),
-            getCollectionData(db, `users/${userId}/investments`),
-            getCollectionData(db, `users/${userId}/alerts`),
-        ]);
-
-        const snapshot = {
-            exportedAt: new Date().toISOString(),
-            userProfile,
-            transactions,
-            debts,
-            budgetCategories,
-            investments,
-            alerts,
-        };
-
-        return {
-            message: 'Export successful!',
-            jsonData: JSON.stringify(snapshot, null, 2),
-        };
-        // --- END: Example of real logic ---
-        */
-
 
     } catch (error) {
         console.error('Error exporting data:', error);

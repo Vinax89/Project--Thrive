@@ -46,5 +46,3 @@ export * from './client-provider';
 export * from './firestore/hooks';
 export * from './errors';
 export * from './error-emitter';
-
-    
