@@ -17,6 +17,7 @@ export type FormState = {
   vendor?: string;
   date?: string;
   total?: number;
+  category?: string;
   errors?: {
     [key: string]: string[] | undefined;
   };
@@ -48,6 +49,7 @@ export async function processReceiptAction(
         vendor: result.vendor,
         date: result.date,
         total: result.total,
+        category: result.category,
       };
     } else {
         return { message: "The AI could not process the receipt. Please try again." };

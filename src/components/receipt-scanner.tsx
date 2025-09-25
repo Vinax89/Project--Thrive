@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useActionState, useState, useRef } from "react";
+import { useActionState, useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useFormStatus } from "react-dom";
 import { processReceiptAction, type FormState } from "@/app/(main)/scan/actions";
@@ -42,6 +42,13 @@ export function ReceiptScanner() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const [category, setCategory] = useState("");
+  useEffect(() => {
+    if (state.category) {
+      setCategory(state.category);
+    }
+  }, [state.category]);
+
   const { user } = useUser();
   const { add: addTransaction } = useCollection<Transaction>(user ? `users/${user.uid}/transactions` : null);
 
@@ -60,12 +67,12 @@ export function ReceiptScanner() {
   };
 
   const handleAddAsTransaction = () => {
-    if (state.vendor && state.date && state.total) {
+    if (state.vendor && state.date && state.total && category) {
         addTransaction({
             name: state.vendor,
             amount: state.total,
             date: new Date(state.date).toISOString(),
-            category: 'Uncategorized',
+            category: category,
         });
         toast({
             title: "Transaction Added",
@@ -131,10 +138,16 @@ export function ReceiptScanner() {
             <Alert>
               <Terminal className="h-4 w-4" />
               <AlertTitle>Scan Results</AlertTitle>
-              <AlertDescription className="mt-4 space-y-2">
-                <p><strong>Vendor:</strong> {state.vendor}</p>
-                <p><strong>Date:</strong> {state.date}</p>
-                <p><strong>Total:</strong> ${state.total?.toFixed(2)}</p>
+              <AlertDescription className="mt-4 space-y-4">
+                <div className="space-y-2">
+                  <p><strong>Vendor:</strong> {state.vendor}</p>
+                  <p><strong>Date:</strong> {state.date}</p>
+                  <p><strong>Total:</strong> ${state.total?.toFixed(2)}</p>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Input id="category" value={category} onChange={(e) => setCategory(e.target.value)} />
+                </div>
               </AlertDescription>
             </Alert>
           ) : (
@@ -147,7 +160,7 @@ export function ReceiptScanner() {
         </CardContent>
         {state.vendor && (
             <CardFooter>
-                 <Button onClick={handleAddAsTransaction} className="w-full">
+                 <Button onClick={handleAddAsTransaction} className="w-full" disabled={!category}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add as Transaction
                 </Button>
