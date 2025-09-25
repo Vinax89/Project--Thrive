@@ -75,11 +75,11 @@ export default function DashboardPage() {
   const initialState: FormState = { message: "" };
   const [state, formAction] = useActionState(getCashFlowAdviceAction, initialState);
 
-  const totalIncome = profile?.income || 0;
+  const totalIncome = (profile as any)?.income || 0;
   const totalSpending = transactions.reduce((sum, t) => sum + t.amount, 0);
   const totalDebt = debts.reduce((sum, d) => sum + d.amount, 0);
-  const savingsGoal = profile?.savingsGoal || 0;
-  const currentSavings = profile?.savings || 0;
+  const savingsGoal = (profile as any)?.savingsGoal || 0;
+  const currentSavings = (profile as any)?.savings || 0;
   const savingsProgress = savingsGoal > 0 ? (currentSavings / savingsGoal) * 100 : 0;
   
   // Create a summary of recent spending for the AI prompt
@@ -248,3 +248,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

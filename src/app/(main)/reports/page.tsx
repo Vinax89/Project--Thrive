@@ -56,10 +56,12 @@ export default function ReportsPage() {
                 <CardDescription>Your income vs. expenses over the past months.</CardDescription>
             </CardHeader>
             <CardContent>
-                <CashFlowLineChart transactions={transactions} income={profile?.income || 0} />
+                <CashFlowLineChart transactions={transactions} income={(profile as any)?.income || 0} />
             </CardContent>
         </Card>
       </div>
     </div>
   );
 }
+
+    

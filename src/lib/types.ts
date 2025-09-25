@@ -1,3 +1,4 @@
+
 export type Debt = {
   id?: string;
   name: string;
@@ -17,7 +18,7 @@ export type BudgetCategory = {
   id?: string;
   name: string;
   allocated: number;
-  spent: number;
+  spent?: number;
 };
 
 export type Investment = {
@@ -33,11 +34,13 @@ export type UserProfile = {
     id?: string;
     uid: string;
     email: string;
-    displayName: string;
+    displayName?: string;
     photoURL?: string;
     income?: number;
     savings?: number;
     savingsGoal?: number;
-    createdAt: any;
-    lastLogin: any;
+    createdAt?: any;
+    lastLogin?: any;
 }
+
+    

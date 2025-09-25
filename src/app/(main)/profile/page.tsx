@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useForm, useFormState } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUser } from '@/firebase/auth/use-user';
@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -65,29 +64,27 @@ export default function ProfilePage() {
     },
   });
 
-  const { isSubmitting, isDirty } = useFormState({ control: form.control });
 
   useEffect(() => {
     if (profile) {
       form.reset({
-        displayName: profile.displayName || '',
-        email: profile.email || '',
-        income: profile.income || 0,
-        savings: profile.savings || 0,
-        savingsGoal: profile.savingsGoal || 0,
+        displayName: profile.displayName || user?.displayName || '',
+        email: profile.email || user?.email || '',
+        income: (profile as any).income || 0,
+        savings: (profile as any).savings || 0,
+        savingsGoal: (profile as any).savingsGoal || 0,
       });
     }
-  }, [profile, form]);
+  }, [profile, user, form]);
 
   async function onSubmit(data: ProfileFormValues) {
-    if (!profile) return;
     try {
       await update(data);
       toast({
         title: 'Profile updated!',
         description: 'Your changes have been saved successfully.',
       });
-      form.reset(data); // Resets the dirty state
+      form.reset(data, { keepValues: true }); 
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -191,8 +188,8 @@ export default function ProfilePage() {
                 />
                </div>
 
-              <Button type="submit" disabled={isSubmitting || !isDirty}>
-                {isSubmitting ? "Saving..." : "Save Changes"}
+              <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>
+                {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
               </Button>
             </form>
           </Form>
@@ -201,3 +198,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

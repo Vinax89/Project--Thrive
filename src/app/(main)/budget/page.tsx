@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useActionState, useState, useMemo, useEffect } from "react";
+import { useActionState, useState, useMemo } from "react";
 import { useFormStatus } from "react-dom";
 import {
   Card,
@@ -78,14 +78,13 @@ export default function BudgetPage() {
   const initialState: FormState = { message: "" };
   const [state, formAction] = useActionState(getEnvelopeBudgetAction, initialState);
 
-  const totalIncome = profile?.income || 0;
+  const totalIncome = (profile as any)?.income || 0;
 
   const handleAddCategory = () => {
     if (newCategoryName && newCategoryAllocated) {
       add({
         name: newCategoryName,
         allocated: parseFloat(newCategoryAllocated),
-        spent: 0, // Spent is calculated dynamically
       });
       setNewCategoryName("");
       setNewCategoryAllocated("");
@@ -154,14 +153,14 @@ export default function BudgetPage() {
         <div className="lg:col-span-3 space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
                 {categoriesWithSpent.map((category) => {
-                const progress = category.allocated > 0 ? (category.spent / category.allocated) * 100 : 0;
+                const progress = category.allocated > 0 ? ((category.spent || 0) / category.allocated) * 100 : 0;
                 return (
                     <Card key={category.id}>
                     <CardHeader className="flex flex-row items-start justify-between">
                         <div>
                         <CardTitle>{category.name}</CardTitle>
                         <CardDescription>
-                            ${category.spent.toFixed(2)} spent of ${category.allocated.toFixed(2)}
+                            ${(category.spent || 0).toFixed(2)} spent of ${category.allocated.toFixed(2)}
                         </CardDescription>
                         </div>
                         <Button variant="ghost" size="icon" onClick={() => category.id && remove(category.id)}>
@@ -172,7 +171,7 @@ export default function BudgetPage() {
                         <Progress value={progress} />
                         <div className="mt-2 flex justify-between text-xs text-muted-foreground">
                         <span>{progress.toFixed(0)}% Used</span>
-                        <span>${(category.allocated - category.spent).toFixed(2)} Left</span>
+                        <span>${(category.allocated - (category.spent || 0)).toFixed(2)} Left</span>
                         </div>
                     </CardContent>
                     </Card>
@@ -221,3 +220,5 @@ export default function BudgetPage() {
     </div>
   );
 }
+
+    
