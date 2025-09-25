@@ -53,6 +53,12 @@ export default function ProfilePage() {
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
+    defaultValues: {
+      displayName: '',
+      income: 0,
+      savings: 0,
+      savingsGoal: 0,
+    },
     mode: 'onBlur',
   });
 
