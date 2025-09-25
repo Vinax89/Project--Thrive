@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { generateScriptAction, type FormState } from "@/app/(main)/negotiate/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +29,7 @@ function SubmitButton() {
 
 export function BillNegotiationForm() {
   const initialState: FormState = { message: "" };
-  const [state, formAction] = useFormState(generateScriptAction, initialState);
+  const [state, formAction] = useActionState(generateScriptAction, initialState);
 
   return (
     <div className="grid gap-6 lg:grid-cols-5">
