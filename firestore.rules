@@ -1,9 +1,111 @@
+/**
+ * @fileoverview Firestore Security Rules for the application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model.  Users can only
+ * read and write their own data.  No data is publicly accessible.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores public user profile information.
+ * - /users/{userId}/debts/{debtId}: Stores individual user debt items.
+ * - /users/{userId}/transactions/{transactionId}: Stores user transactions.
+ * - /users/{userId}/budgetCategories/{categoryId}: Stores user budget categories
+ *
+ * Key Security Decisions:
+ * - Users can only access their own user profile and data stored under their user ID.
+ * - Listing other users is not allowed, only listing data under the user's own ID.
+ * - The rules are designed to be very strict on authorization and relaxed on data validation.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helper function to check if the user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the user is the owner of the document
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Helper function to check if the user is the owner of the existing document
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Controls access to user profile information. Only the user can read/write their own profile.
+     * @path /users/{userId}
+     * @allow (get, create, update, delete) if the user is the owner.
+     *   Example: A user with UID "user123" can read their profile at /users/user123.
+     * @deny (get, create, update, delete) if the user is not the owner.
+     *   Example: A user with UID "user456" cannot read the profile at /users/user123.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     */
     match /users/{userId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow get: if isOwner(userId);
+      allow list: if false; // User listing is not allowed
+
+      allow create: if isOwner(userId);
+
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to user debt items. Only the user can read/write their own debt items.
+     * @path /users/{userId}/debts/{debtId}
+     * @allow (get, create, update, delete, list) if the user is the owner.
+     *   Example: A user with UID "user123" can create a debt at /users/user123/debts/debt1.
+     * @deny (get, create, update, delete, list) if the user is not the owner.
+     *   Example: A user with UID "user456" cannot read a debt at /users/user123/debts/debt1.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     */
+    match /users/{userId}/debts/{debtId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to user transactions. Only the user can read/write their own transactions.
+     * @path /users/{userId}/transactions/{transactionId}
+     * @allow (get, create, update, delete, list) if the user is the owner.
+     *   Example: A user with UID "user123" can create a transaction at /users/user123/transactions/tx1.
+     * @deny (get, create, update, delete, list) if the user is not the owner.
+     *   Example: A user with UID "user456" cannot read a transaction at /users/user123/transactions/tx1.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     */
+    match /users/{userId}/transactions/{transactionId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to user budget categories. Only the user can read/write their own budget categories.
+     * @path /users/{userId}/budgetCategories/{categoryId}
+     * @allow (get, create, update, delete, list) if the user is the owner.
+     *   Example: A user with UID "user123" can create a category at /users/user123/budgetCategories/cat1.
+     * @deny (get, create, update, delete, list) if the user is not the owner.
+     *   Example: A user with UID "user456" cannot read a category at /users/user123/budgetCategories/cat1.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     */
+    match /users/{userId}/budgetCategories/{categoryId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
   }
 }
