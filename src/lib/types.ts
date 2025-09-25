@@ -5,6 +5,8 @@ export type Debt = {
   name: string;
   amount: number;
   type: 'Credit Card' | 'Loan' | 'BNPL';
+  interestRate?: number;
+  minimumPayment?: number;
 };
 
 export type Transaction = {

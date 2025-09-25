@@ -36,7 +36,7 @@ const menuItems = [
   },
   {
     href: "/scan",
-    label: "Receipt Scanner",
+    label: "Scan Receipt",
     icon: ScanLine,
   },
   {
