@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
+import { useFormStatus } from "react-dom";
 import {
   Card,
   CardContent,
@@ -14,8 +15,8 @@ import { useUser } from "@/firebase/auth/use-user";
 import { useCollection, useDoc } from "@/firebase/firestore/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { BudgetCategory } from "@/lib/types";
-import { PlusCircle, Trash2 } from "lucide-react";
+import type { BudgetCategory, Debt, Transaction } from "@/lib/types";
+import { PlusCircle, Sparkles, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,16 +24,36 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getEnvelopeBudgetAction, type FormState } from "./actions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+      <Button type="submit" disabled={pending} className="w-full">
+        {pending ? "Getting Suggestions..." : "Get AI Suggestions"}
+        <Sparkles className="ml-2 h-4 w-4" />
+      </Button>
+    );
+  }
 
 export default function BudgetPage() {
   const { user } = useUser();
   const { data: budgetCategories = [], add, remove } = useCollection<BudgetCategory>(
     user ? `users/${user.uid}/budgetCategories` : null
   );
+  const { data: transactions = [] } = useCollection<Transaction>(user ? `users/${user.uid}/transactions` : null);
+  const { data: debts = [] } = useCollection<Debt>(user ? `users/${user.uid}/debts` : null);
 
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryAllocated, setNewCategoryAllocated] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const initialState: FormState = { message: "" };
+  const [state, formAction] = useActionState(getEnvelopeBudgetAction, initialState);
+
+  const totalIncome = 5000; // This is hardcoded for now
 
   const handleAddCategory = () => {
     if (newCategoryName && newCategoryAllocated) {
@@ -46,6 +67,10 @@ export default function BudgetPage() {
       setIsDialogOpen(false);
     }
   };
+
+  const suggestedAllocations = state.suggestedAllocations
+    ? JSON.parse(state.suggestedAllocations)
+    : null;
 
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
@@ -84,32 +109,74 @@ export default function BudgetPage() {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {budgetCategories.map((category) => {
-          const progress = category.allocated > 0 ? (category.spent / category.allocated) * 100 : 0;
-          return (
-            <Card key={category.id}>
-              <CardHeader className="flex flex-row items-start justify-between">
-                <div>
-                  <CardTitle>{category.name}</CardTitle>
-                  <CardDescription>
-                    ${category.spent.toFixed(2)} spent of ${category.allocated.toFixed(2)}
-                  </CardDescription>
-                </div>
-                 <Button variant="ghost" size="icon" onClick={() => category.id && remove(category.id)}>
-                    <Trash2 className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <Progress value={progress} />
-                <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                  <span>{progress.toFixed(0)}% Used</span>
-                  <span>${(category.allocated - category.spent).toFixed(2)} Left</span>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+
+       <div className="grid gap-6 lg:grid-cols-5">
+        <div className="lg:col-span-3 space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
+                {budgetCategories.map((category) => {
+                const progress = category.allocated > 0 ? (category.spent / category.allocated) * 100 : 0;
+                return (
+                    <Card key={category.id}>
+                    <CardHeader className="flex flex-row items-start justify-between">
+                        <div>
+                        <CardTitle>{category.name}</CardTitle>
+                        <CardDescription>
+                            ${category.spent.toFixed(2)} spent of ${category.allocated.toFixed(2)}
+                        </CardDescription>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => category.id && remove(category.id)}>
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                    </CardHeader>
+                    <CardContent>
+                        <Progress value={progress} />
+                        <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                        <span>{progress.toFixed(0)}% Used</span>
+                        <span>${(category.allocated - category.spent).toFixed(2)} Left</span>
+                        </div>
+                    </CardContent>
+                    </Card>
+                );
+                })}
+            </div>
+        </div>
+
+        <div className="lg:col-span-2">
+           <Card>
+             <form action={formAction}>
+                <input type="hidden" name="income" value={totalIncome} />
+                <input type="hidden" name="expenses" value={JSON.stringify(transactions)} />
+                <input type="hidden" name="priorDebts" value={JSON.stringify(debts)} />
+
+                <CardHeader>
+                    <CardTitle>AI Budget Advisor</CardTitle>
+                    <CardDescription>
+                    Get AI-powered suggestions for your budget allocations.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {suggestedAllocations ? (
+                    <Alert>
+                        <Terminal className="h-4 w-4" />
+                        <AlertTitle>Suggested Allocations</AlertTitle>
+                        <AlertDescription className="mt-2">
+                           <pre className="whitespace-pre-wrap font-mono text-sm">{JSON.stringify(suggestedAllocations, null, 2)}</pre>
+                        </AlertDescription>
+                    </Alert>
+                ) : (
+                    <div className="flex h-[150px] items-center justify-center rounded-md border border-dashed text-center">
+                        <p className="text-sm text-muted-foreground">
+                        {state.message || "Click the button to get AI suggestions."}
+                        </p>
+                    </div>
+                )}
+                </CardContent>
+                <CardContent>
+                     <SubmitButton />
+                </CardContent>
+             </form>
+           </Card>
+        </div>
       </div>
     </div>
   );
