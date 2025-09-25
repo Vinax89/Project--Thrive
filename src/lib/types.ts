@@ -20,6 +20,15 @@ export type BudgetCategory = {
   spent: number;
 };
 
+export type Investment = {
+    id?: string;
+    name: string;
+    type: string;
+    quantity: number;
+    purchasePrice: number;
+    currentPrice: number;
+};
+
 export type UserProfile = {
     id?: string;
     uid: string;

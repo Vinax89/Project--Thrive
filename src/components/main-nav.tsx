@@ -18,6 +18,7 @@ import {
   Receipt,
   User,
   ScanLine,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +47,11 @@ const menuItems = [
     href: "/debts",
     label: "Debts",
     icon: CreditCard,
+  },
+  {
+    href: "/investments",
+    label: "Investments",
+    icon: TrendingUp,
   },
   {
     href: "/reports",
