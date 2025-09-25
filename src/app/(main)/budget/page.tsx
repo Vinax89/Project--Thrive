@@ -15,19 +15,13 @@ import { useCollection, useDoc } from "@/firebase/firestore/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { BudgetCategory, Transaction, Debt, UserProfile } from "@/lib/types";
-import { PlusCircle, Trash2, Sparkles, Terminal } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { PlusCircle, Trash2, Sparkles, Terminal, Pencil } from "lucide-react";
 import { getEnvelopeBudgetAction, FormState } from "./actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useFirestore, useMemoFirebase } from "@/firebase/provider";
 import { collection, doc, arrayUnion } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { EditBudgetCategoryDialog } from "@/components/edit-budget-category-dialog";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -54,7 +48,7 @@ export default function BudgetPage() {
     () => (user && firestore ? collection(firestore, `users/${user.uid}/budgetCategories`) : null),
     [user, firestore]
   );
-  const { data: budgetCategories = [], add, remove } = useCollection<BudgetCategory>(budgetCategoriesColRef);
+  const { data: budgetCategories = [], add, remove, update } = useCollection<BudgetCategory>(budgetCategoriesColRef);
 
   const transactionsColRef = useMemoFirebase(
     () => (user && firestore ? collection(firestore, `users/${user.uid}/transactions`) : null),
@@ -69,38 +63,45 @@ export default function BudgetPage() {
   const { data: debts = [] } = useCollection<Debt>(debtsColRef);
 
 
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryAllocated, setNewCategoryAllocated] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<BudgetCategory | null>(null);
 
   const initialState: FormState = { message: "" };
   const [state, formAction] = useActionState(getEnvelopeBudgetAction, initialState);
 
-  const handleAddCategory = async () => {
-    if (newCategoryName && newCategoryAllocated) {
-      const isFirstCategory = budgetCategories.length === 0;
+  const handleAddClick = () => {
+    setSelectedCategory(null);
+    setIsDialogOpen(true);
+  };
 
-      await add({
-        name: newCategoryName,
-        allocated: parseFloat(newCategoryAllocated),
-      });
+  const handleEditClick = (category: BudgetCategory) => {
+    setSelectedCategory(category);
+    setIsDialogOpen(true);
+  };
 
-      // Check for first budget badge
-      if (isFirstCategory) {
-        const earnedBadges = (profile as any)?.earnedBadges || [];
-        if (!earnedBadges.includes('first-budget')) {
-           await updateUser({ earnedBadges: arrayUnion('first-budget') });
-           toast({
-              title: "Achievement Unlocked!",
-              description: "You've earned the 'Budget Boss' badge!",
-          });
+  const handleSaveCategory = async (data: Partial<BudgetCategory>) => {
+    if (selectedCategory?.id) {
+        await update(selectedCategory.id, data);
+        toast({ title: "Category Updated", description: `${data.name} has been updated.`});
+    } else {
+        const isFirstCategory = budgetCategories.length === 0;
+        await add(data as Omit<BudgetCategory, 'id'>);
+        toast({ title: "Category Added", description: `${data.name} has been added.`});
+
+        if (isFirstCategory) {
+            const earnedBadges = (profile as any)?.earnedBadges || [];
+            if (!earnedBadges.includes('first-budget')) {
+               await updateUser({ earnedBadges: arrayUnion('first-budget') });
+               toast({
+                  title: "Achievement Unlocked!",
+                  description: "You've earned the 'Budget Boss' badge!",
+              });
+            }
         }
-      }
-
-      setNewCategoryName("");
-      setNewCategoryAllocated("");
-      setIsDialogOpen(false);
     }
+
+    setIsDialogOpen(false);
+    setSelectedCategory(null);
   };
 
   const categoriesWithSpent = useMemo(() => {
@@ -135,33 +136,10 @@ export default function BudgetPage() {
             Allocate and track your spending by category.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Category
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Budget Category</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <Input
-                placeholder="Category Name"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-              />
-              <Input
-                type="number"
-                placeholder="Allocated Amount"
-                value={newCategoryAllocated}
-                onChange={(e) => setNewCategoryAllocated(e.target.value)}
-              />
-              <Button onClick={handleAddCategory}>Add Category</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={handleAddClick}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Category
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -182,13 +160,18 @@ export default function BudgetPage() {
                         {category.allocated.toFixed(2)}
                       </CardDescription>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => category.id && remove(category.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
+                     <div className="flex items-center">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditClick(category)}>
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => category.id && remove(category.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <Progress value={progress} />
@@ -246,6 +229,12 @@ export default function BudgetPage() {
             </Card>
         </div>
       </div>
+      <EditBudgetCategoryDialog 
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSave={handleSaveCategory}
+        category={selectedCategory}
+      />
     </div>
   );
 }
