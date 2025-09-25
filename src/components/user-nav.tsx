@@ -1,7 +1,5 @@
-
 'use client';
 
-import Image from "next/image";
 import { useAuth } from "@/firebase/provider";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -17,7 +15,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export function UserNav() {
   const { user } = useUser();
@@ -30,9 +27,8 @@ export function UserNav() {
     router.push("/login");
   };
 
-  const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
-  const avatarImage = user?.photoURL || (userAvatar ? userAvatar.imageUrl : undefined);
-  const avatarFallback = user?.displayName ? user.displayName.charAt(0).toUpperCase() : 'U';
+  const avatarImage = user?.photoURL;
+  const avatarFallback = user?.displayName ? user.displayName.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : 'U');
 
   return (
     <DropdownMenu>

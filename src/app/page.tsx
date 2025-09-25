@@ -1,4 +1,3 @@
-
 'use client';
 import { useUser } from '@/firebase/auth/use-user';
 import { redirect } from 'next/navigation';

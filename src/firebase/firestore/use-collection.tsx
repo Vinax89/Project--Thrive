@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -12,8 +11,6 @@ import {
   serverTimestamp,
   CollectionReference,
   WithFieldValue,
-  Query,
-  DocumentReference,
   FirestoreError,
 } from 'firebase/firestore';
 import { useFirestore } from '../provider';
@@ -104,4 +101,3 @@ export function useCollection<T>(collectionName: string) {
 
   return { data, loading, error, add, update, remove };
 }
-    

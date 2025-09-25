@@ -1,5 +1,4 @@
 
-
 export type Debt = {
   id?: string;
   name: string;
@@ -42,6 +41,3 @@ export type UserProfile = {
     createdAt?: any;
     lastLogin?: any;
 }
-
-    
-    

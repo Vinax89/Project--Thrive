@@ -1,317 +1,91 @@
-
 {
   "entities": {
     "UserProfile": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "UserProfile",
+      "title": "User Profile",
+      "description": "Represents a user's profile within the application.",
       "type": "object",
-      "description": "Represents a user's profile within the ChatPay application.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the UserProfile entity."
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's email address.",
-          "format": "email"
-        },
-        "displayName": {
-          "type": "string",
-          "description": "The user's display name."
-        },
-        "firstName": {
-          "type": "string",
-          "description": "The user's first name."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "The user's last name."
-        }
+        "uid": { "type": "string", "description": "The user's unique ID from Firebase Auth." },
+        "email": { "type": "string", "description": "The user's email address.", "format": "email" },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "photoURL": { "type": "string", "description": "URL of the user's profile picture." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of when the profile was created." },
+        "lastLogin": { "type": "string", "format": "date-time", "description": "Timestamp of the user's last login." }
       },
-      "required": [
-        "id",
-        "email"
-      ]
+      "required": ["uid", "email"]
     },
     "Debt": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Debt",
+      "description": "Represents a financial debt.",
       "type": "object",
-      "description": "Represents a debt owed by the user.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Debt entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the debt (e.g., Credit Card, Loan)."
-        },
-        "amount": {
-          "type": "number",
-          "description": "The total amount of the debt."
-        },
-        "interestRate": {
-          "type": "number",
-          "description": "The interest rate of the debt."
-        },
-        "minimumPayment": {
-          "type": "number",
-          "description": "The minimum payment required for the debt."
-        }
+        "name": { "type": "string", "description": "Name of the debt (e.g., Credit Card, Student Loan)." },
+        "amount": { "type": "number", "description": "The total amount of the debt." },
+        "type": { "type": "string", "enum": ["Credit Card", "Loan", "BNPL"], "description": "The type of the debt." },
+        "interestRate": { "type": "number", "description": "The interest rate of the debt (optional)." },
+        "minimumPayment": { "type": "number", "description": "The minimum monthly payment (optional)." }
       },
-      "required": [
-        "id",
-        "name",
-        "amount"
-      ]
-    },
-    "Obligation": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Obligation",
-      "type": "object",
-      "description": "Represents a financial obligation or bill.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Obligation entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the obligation (e.g., Rent, Utilities)."
-        },
-        "amount": {
-          "type": "number",
-          "description": "The amount of the obligation."
-        },
-        "dueDate": {
-          "type": "string",
-          "description": "The date the obligation is due.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "amount",
-        "dueDate"
-      ]
-    },
-    "Budget": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Budget",
-      "type": "object",
-      "description": "Represents a user's budget.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Budget entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the budget (e.g., Monthly Budget)."
-        },
-        "startDate": {
-          "type": "string",
-          "description": "The start date of the budget.",
-          "format": "date-time"
-        },
-        "endDate": {
-          "type": "string",
-          "description": "The end date of the budget.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "startDate",
-        "endDate"
-      ]
-    },
-    "BudgetItem": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "BudgetItem",
-      "type": "object",
-      "description": "Represents an item within a budget (e.g., Groceries, Entertainment).",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the BudgetItem entity."
-        },
-        "budgetId": {
-          "type": "string",
-          "description": "Reference to Budget. (Relationship: Budget 1:N BudgetItem)"
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the budget item."
-        },
-        "amount": {
-          "type": "number",
-          "description": "The allocated amount for the budget item."
-        }
-      },
-      "required": [
-        "id",
-        "budgetId",
-        "name",
-        "amount"
-      ]
-    },
-    "BudgetCategory": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "BudgetCategory",
-      "type": "object",
-      "description": "Represents a category for budgeting.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the BudgetCategory entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the category."
-        },
-        "allocated": {
-          "type": "number",
-          "description": "The amount allocated to this category."
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "allocated"
-      ]
-    },
-    "Investment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Investment",
-      "type": "object",
-      "description": "Represents a user's investment.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Investment entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the investment (e.g., Stock, Bond)."
-        },
-        "type": {
-          "type": "string",
-          "description": "The type of investment (e.g., Stock, Bond, Mutual Fund)."
-        },
-        "quantity": {
-          "type": "number",
-          "description": "The quantity of the investment."
-        },
-        "purchasePrice": {
-          "type": "number",
-          "description": "The price at which the investment was purchased."
-        },
-        "currentPrice": {
-          "type": "number",
-          "description": "The current price of the investment."
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "type",
-        "quantity",
-        "purchasePrice",
-        "currentPrice"
-      ]
+      "required": ["name", "amount", "type"]
     },
     "Transaction": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Transaction",
-      "type": "object",
       "description": "Represents a single financial transaction.",
+      "type": "object",
       "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "amount": {
-          "type": "number"
-        },
-        "date": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "category": {
-          "type": "string"
-        }
+        "name": { "type": "string", "description": "Description of the transaction." },
+        "amount": { "type": "number", "description": "The amount of the transaction." },
+        "date": { "type": "string", "format": "date-time", "description": "The date of the transaction." },
+        "category": { "type": "string", "description": "The category of the transaction (e.g., Food, Transport)." }
       },
-      "required": [
-        "id",
-        "name",
-        "amount",
-        "date",
-        "category"
-      ]
+      "required": ["name", "amount", "date", "category"]
+    },
+    "BudgetCategory": {
+      "title": "Budget Category",
+      "description": "Represents a category in a user's budget.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the category (e.g., Groceries, Rent)." },
+        "allocated": { "type": "number", "description": "The amount allocated to this category." }
+      },
+      "required": ["name", "allocated"]
+    },
+    "Investment": {
+        "title": "Investment",
+        "description": "Represents a user's investment.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string", "description": "Name of the investment (e.g., Apple Inc.)." },
+            "type": { "type": "string", "description": "Type of investment (e.g., Stock, ETF)." },
+            "quantity": { "type": "number", "description": "Number of shares or units." },
+            "purchasePrice": { "type": "number", "description": "The price at which the investment was purchased per unit." },
+            "currentPrice": { "type": "number", "description": "The current market price per unit." }
+        },
+        "required": ["name", "type", "quantity", "purchasePrice", "currentPrice"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous",
-      "google.com"
-    ]
+    "providers": ["password", "google.com"]
   },
   "firestore": {
     "/users/{userId}": {
-      "schema": {
-        "$ref": "#/entities/UserProfile"
-      },
-      "description": "Stores user profile information. Owned by the user."
-    },
-    "/users/{userId}/debts/{debtId}": {
-      "schema": {
-        "$ref": "#/entities/Debt"
-      },
-      "description": "Stores debt information for a user. Owned by the user."
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores user profile information. The document ID is the user's UID."
     },
     "/users/{userId}/transactions/{transactionId}": {
-      "schema": {
-        "$ref": "#/entities/Transaction"
-      },
-      "description": "Stores transaction information for a user. Owned by the user."
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "Sub-collection for a user's transactions."
     },
-    "/users/{userId}/obligations/{obligationId}": {
-      "schema": {
-        "$ref": "#/entities/Obligation"
-      },
-      "description": "Stores obligation information for a user. Owned by the user."
+    "/users/{userId}/debts/{debtId}": {
+      "schema": { "$ref": "#/entities/Debt" },
+      "description": "Sub-collection for a user's debts."
     },
-    "/users/{userId}/budgets/{budgetId}": {
-      "schema": {
-        "$ref": "#/entities/Budget"
-      },
-      "description": "Stores budget information for a user. Owned by the user."
-    },
-    "/users/{userId}/budgets/{budgetId}/budgetItems/{budgetItemId}": {
-      "schema": {
-        "$ref": "#/entities/BudgetItem"
-      },
-      "description": "Stores budget item information for a user. Owned by the user."
-    },
-    "/users/{userId}/budgetCategories/{budgetCategoryId}": {
-      "schema": {
-        "$ref": "#/entities/BudgetCategory"
-      },
-      "description": "Stores budget category information for a user. Owned by the user."
+    "/users/{userId}/budgetCategories/{categoryId}": {
+      "schema": { "$ref": "#/entities/BudgetCategory" },
+      "description": "Sub-collection for a user's budget categories."
     },
     "/users/{userId}/investments/{investmentId}": {
-      "schema": {
-        "$ref": "#/entities/Investment"
-      },
-      "description": "Stores investment information for a user. Owned by the user."
+        "schema": { "$ref": "#/entities/Investment" },
+        "description": "Sub-collection for a user's investments."
     }
   }
 }

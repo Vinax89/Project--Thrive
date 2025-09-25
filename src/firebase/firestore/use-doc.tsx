@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -7,7 +6,6 @@ import {
   onSnapshot,
   updateDoc,
   serverTimestamp,
-  DocumentReference,
   FirestoreError,
 } from 'firebase/firestore';
 import { useFirestore } from '../provider';
@@ -75,4 +73,3 @@ export function useDoc<T>(docPath: string) {
 
   return { data, loading, error, update };
 }
-    
