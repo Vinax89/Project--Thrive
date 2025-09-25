@@ -37,6 +37,11 @@ export default function EducationPage() {
   const totalIncome = profile?.income || 0;
   const currentSavings = profile?.savings || 0;
 
+  // Prepare simplified data for the AI prompt
+  const simplifiedExpenses = JSON.stringify(transactions.map(({ name, amount, category }) => ({ name, amount, category })));
+  const simplifiedDebts = JSON.stringify(debts.map(({ name, amount, type }) => ({ name, amount, type })));
+
+
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
       <div>
@@ -50,8 +55,8 @@ export default function EducationPage() {
         <Card className="lg:col-span-2">
           <form action={formAction}>
             <input type="hidden" name="income" value={totalIncome} />
-            <input type="hidden" name="expenses" value={JSON.stringify(transactions)} />
-            <input type="hidden" name="debts" value={JSON.stringify(debts)} />
+            <input type="hidden" name="expenses" value={simplifiedExpenses} />
+            <input type="hidden" name="debts" value={simplifiedDebts} />
             <input type="hidden" name="savings" value={currentSavings} />
 
             <CardHeader>
@@ -91,7 +96,7 @@ export default function EducationPage() {
                     <Alert>
                         <BookOpen className="h-4 w-4" />
                         <AlertTitle>Content Ready!</AlertTitle>
-                        <AlertDescription className="mt-2 whitespace-pre-wrap font-mono text-sm">
+                        <AlertDescription className="mt-2 whitespace-pre-wrap text-sm">
                             {state.suggestedContent}
                         </AlertDescription>
                     </Alert>

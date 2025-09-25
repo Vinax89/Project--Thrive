@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -12,17 +13,17 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const FinancialEducationInputSchema = z.object({
-  income: z.number().describe('The user\'s monthly income.'),
-  debts: z.string().describe('A list of the user\'s debts including type, amount, interest rate, and minimum payment.'),
-  expenses: z.string().describe('A list of the user\'s monthly expenses by category.'),
-  savings: z.number().describe('The user\'s current savings balance.'),
-  financialGoals: z.string().describe('The user\'s financial goals, e.g., saving for a down payment on a house, paying off debt, investing for retirement.'),
+  income: z.number().describe("The user's monthly income."),
+  debts: z.string().describe("A JSON string representing the user's debts including type, amount, interest rate, and minimum payment."),
+  expenses: z.string().describe("A JSON string representing the user's monthly expenses by category."),
+  savings: z.number().describe("The user's current savings balance."),
+  financialGoals: z.string().describe("The user's financial goals, e.g., saving for a down payment on a house, paying off debt, investing for retirement."),
 });
 
 export type FinancialEducationInput = z.infer<typeof FinancialEducationInputSchema>;
 
 const FinancialEducationOutputSchema = z.object({
-  suggestedContent: z.string().describe('A list of suggested financial education content tailored to the user\'s financial situation and goals.'),
+  suggestedContent: z.string().describe('A list of suggested financial education topics or resources that would be helpful for the user, formatted as a markdown list.'),
 });
 
 export type FinancialEducationOutput = z.infer<typeof FinancialEducationOutputSchema>;
@@ -39,7 +40,7 @@ const prompt = ai.definePrompt({
 
   Analyze the user's income, debts, expenses, savings, and financial goals to identify areas where they could benefit from financial education.
 
-  Provide a list of specific financial education topics or resources that would be helpful for the user.
+  Provide a list of specific financial education topics or resources that would be helpful for the user. Format the response as a markdown list.
 
   Income: {{{income}}}
   Debts: {{{debts}}}
@@ -47,7 +48,7 @@ const prompt = ai.definePrompt({
   Savings: {{{savings}}}
   Financial Goals: {{{financialGoals}}}
 
-  Suggested Content:`, // Ensure this is valid Handlebars syntax
+  Suggested Content:`,
 });
 
 const getFinancialEducationContentFlow = ai.defineFlow(

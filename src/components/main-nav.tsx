@@ -14,7 +14,6 @@ import {
   CreditCard,
   BarChart3,
   FileSignature,
-  CircleDollarSign,
   BookOpen,
   Receipt,
   User,
@@ -25,8 +24,8 @@ import { cn } from "@/lib/utils";
 const menuItems = [
   {
     href: "/dashboard",
-    label: "Money Hub",
-    icon: CircleDollarSign,
+    label: "Dashboard",
+    icon: LayoutDashboard,
   },
   {
     href: "/transactions",
@@ -79,10 +78,10 @@ export function MainNav() {
         <SidebarMenuItem key={item.href}>
           <SidebarMenuButton
             asChild
-            isActive={pathname === item.href}
+            isActive={pathname.startsWith(item.href)}
             className={cn(
               "justify-start",
-              pathname === item.href && "bg-primary/10 text-primary hover:bg-primary/20"
+              pathname.startsWith(item.href) && "bg-primary/10 text-primary hover:bg-primary/20"
             )}
             tooltip={{
               children: item.label,
@@ -93,7 +92,7 @@ export function MainNav() {
               <item.icon
                 className={cn(
                   "h-4 w-4 shrink-0",
-                  pathname === item.href ? "text-primary" : "text-muted-foreground"
+                  pathname.startsWith(item.href) ? "text-primary" : "text-muted-foreground"
                 )}
               />
               <span className="truncate">{item.label}</span>
