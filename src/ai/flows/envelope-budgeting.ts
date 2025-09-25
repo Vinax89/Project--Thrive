@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -39,13 +40,19 @@ const prompt = ai.definePrompt({
   name: 'envelopeBudgetingPrompt',
   input: {schema: EnvelopeBudgetingInputSchema},
   output: {schema: EnvelopeBudgetingOutputSchema},
-  prompt: `You are a personal finance expert. You will be provided with the users prior debts, expenses, and income. You will use this information to suggest fund allocations to different categories, such as housing, food, transportation, utilities, debt repayment, and savings.
+  prompt: `You are a personal finance expert. You will be provided with the user's prior debts, expenses, and income. Your task is to suggest a balanced monthly budget allocation.
+
+- Analyze the user's financial situation.
+- Create a set of budget categories (e.g., Housing, Food, Transport, Utilities, Debt Repayment, Savings, Discretionary).
+- Allocate the user's total income across these categories.
+- Ensure the total allocation equals the user's income.
+- The output MUST be a valid JSON string, where keys are the category names and values are the allocated amounts.
 
 Prior Debts: {{{priorDebts}}}
 Expenses: {{{expenses}}}
 Income: {{{income}}}
 
-Return a JSON string representing the suggested fund allocations. Be sure to include reasonable categories. The total of the categories should add up to the income. Make sure to reduce debt as much as possible while still giving the user enough spending money to survive.
+Return a JSON string representing the suggested fund allocations. The total of all allocations must sum up exactly to the income. Prioritize debt repayment and savings after essential expenses.
 `,
 });
 
