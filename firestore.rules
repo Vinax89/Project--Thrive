@@ -1,175 +1,180 @@
 /**
- * @fileoverview Firestore Security Rules for the application.
+ * @fileoverview Firestore Security Rules for Prototyping.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model.  Users can only
- * access their own data, preventing unauthorized access. Data schema is
- * not strictly enforced to allow for rapid prototyping and iteration.
+ * This ruleset enforces a strict user-ownership model for data privacy and security.
+ * Users can only access their own data.
  *
  * Data Structure:
  * All data is nested under /users/{userId}, ensuring clear ownership.
  *
  * Key Security Decisions:
- * - Users can only manage their own data (create, read, update, delete).
- * - Data consistency is enforced between the path and document fields (e.g., userId in path must match userId in document).
- * - List operations are only allowed for the owner of the data.
+ * - Users can only read and write their own user profile and associated subcollections.
+ * - Data validation is relaxed in this prototyping phase, focusing on authorization.
+ * - `list` operations are restricted to the owner of a user subcollection.
+ *
+ * Denormalization for Authorization:
+ * No denormalization is explicitly used in this ruleset, as ownership is enforced via path.
+ * However, consider denormalizing data like roles into the UserProfile document if more complex
+ * authorization schemes are required in the future.
+ *
+ * Structural Segregation:
+ * All private data is stored under the /users/{userId} path.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Secures the user profile document.
+     * @description Checks if the user is signed in.
+     * @returns {boolean} True if the user is signed in, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the request is made by the owner of the resource.
+     * @param {string} userId - The user ID to compare against the request's auth UID.
+     * @returns {boolean} True if the user ID matches the request's auth UID.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the user is the owner of the existing document.
+     * @param {string} userId - The user ID to compare against the request's auth UID and resource data.
+     * @returns {boolean} True if the user is the owner and the resource exists.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Rules for user profile documents.
      * @path /users/{userId}
-     * @allow (create) User with UID 'user123' can create their profile document.
-     * @deny (create) User with UID 'user456' cannot create a profile document for 'user123'.
-     * @allow (get) User with UID 'user123' can read their profile document.
-     * @deny (get) User with UID 'user456' cannot read the profile document for 'user123'.
-     * @allow (update) User with UID 'user123' can update their profile document.
-     * @deny (update) User with UID 'user456' cannot update the profile document for 'user123'.
-     * @allow (delete) User with UID 'user123' can delete their profile document.
-     * @deny (delete) User with UID 'user456' cannot delete the profile document for 'user123'.
-     * @principle Enforces document ownership for writes and reads. Validates ownership on creation and enforces immutability of the owner field.
+     * @allow (create) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can create their profile.
+     * @deny (create) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot create profile for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (get) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can get their profile.
+     * @deny (get) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot get profile for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (update) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can update their profile.
+     * @deny (update) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot update profile for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (delete) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can delete their profile.
+     * @deny (delete) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot delete profile for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
       allow get: if isOwner(userId);
       allow list: if false;
       allow create: if isOwner(userId) && request.resource.data.uid == userId;
-      allow update: if isOwner(userId) && resource.data.uid == userId;
-      allow delete: if isOwner(userId) && resource.data.uid == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.uid == resource.data.uid;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Secures a user's transactions sub-collection.
+     * @description Rules for user transaction documents.
      * @path /users/{userId}/transactions/{transactionId}
-     * @allow (create) User with UID 'user123' can create a transaction document in their own collection.
-     * @deny (create) User with UID 'user456' cannot create a transaction document in 'user123' collection.
-     * @allow (get) User with UID 'user123' can read a transaction document in their own collection.
-     * @deny (get) User with UID 'user456' cannot read a transaction document in 'user123' collection.
-     * @allow (list) User with UID 'user123' can list transactions in their own collection.
-     * @deny (list) User with UID 'user456' cannot list transactions in 'user123' collection.
-     * @allow (update) User with UID 'user123' can update a transaction document in their own collection.
-     * @deny (update) User with UID 'user456' cannot update a transaction document in 'user123' collection.
-     * @allow (delete) User with UID 'user123' can delete a transaction document in their own collection.
-     * @deny (delete) User with UID 'user456' cannot delete a transaction document from 'user123' collection.
-     * @principle Enforces document ownership.
+     * @allow (create) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can create a transaction.
+     * @deny (create) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot create transaction for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (get) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can get their transaction.
+     * @deny (get) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot get transaction for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (update) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can update their transaction.
+     * @deny (update) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot update transaction for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (delete) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can delete their transaction.
+     * @deny (delete) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot delete transaction for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/transactions/{transactionId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) && resource != null;
-      allow delete: if isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Secures a user's debts sub-collection.
+     * @description Rules for user debt documents.
      * @path /users/{userId}/debts/{debtId}
-     * @allow (create) User with UID 'user123' can create a debt document in their own collection.
-     * @deny (create) User with UID 'user456' cannot create a debt document in 'user123' collection.
-     * @allow (get) User with UID 'user123' can read a debt document in their own collection.
-     * @deny (get) User with UID 'user456' cannot read a debt document in 'user123' collection.
-     * @allow (list) User with UID 'user123' can list debt documents in their own collection.
-     * @deny (list) User with UID 'user456' cannot list debt documents in 'user123' collection.
-     * @allow (update) User with UID 'user123' can update a debt document in their own collection.
-     * @deny (update) User with UID 'user456' cannot update a debt document in 'user123' collection.
-     * @allow (delete) User with UID 'user123' can delete a debt document in their own collection.
-     * @deny (delete) User with UID 'user456' cannot delete a debt document from 'user123' collection.
-     * @principle Enforces document ownership.
+     * @allow (create) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can create a debt.
+     * @deny (create) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot create debt for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (get) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can get their debt.
+     * @deny (get) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot get debt for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (update) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can update their debt.
+     * @deny (update) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot update debt for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (delete) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can delete their debt.
+     * @deny (delete) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot delete debt for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/debts/{debtId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) && resource != null;
-      allow delete: if isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Secures a user's budget categories sub-collection.
+     * @description Rules for user budget category documents.
      * @path /users/{userId}/budgetCategories/{categoryId}
-     * @allow (create) User with UID 'user123' can create a budget category document in their own collection.
-     * @deny (create) User with UID 'user456' cannot create a budget category document in 'user123' collection.
-     * @allow (get) User with UID 'user123' can read a budget category document in their own collection.
-     * @deny (get) User with UID 'user456' cannot read a budget category document in 'user123' collection.
-     * @allow (list) User with UID 'user123' can list budget categories in their own collection.
-     * @deny (list) User with UID 'user456' cannot list budget categories in 'user123' collection.
-     * @allow (update) User with UID 'user123' can update a budget category document in their own collection.
-     * @deny (update) User with UID 'user456' cannot update a budget category document in 'user123' collection.
-     * @allow (delete) User with UID 'user123' can delete a budget category document in their own collection.
-     * @deny (delete) User with UID 'user456' cannot delete a budget category document from 'user123' collection.
-     * @principle Enforces document ownership.
+     * @allow (create) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can create a budget category.
+     * @deny (create) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot create budget category for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (get) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can get their budget category.
+     * @deny (get) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot get budget category for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (update) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can update their budget category.
+     * @deny (update) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot update budget category for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (delete) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can delete their budget category.
+     * @deny (delete) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot delete budget category for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/budgetCategories/{categoryId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) && resource != null;
-      allow delete: if isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Secures a user's investments sub-collection.
+     * @description Rules for user investment documents.
      * @path /users/{userId}/investments/{investmentId}
-     * @allow (create) User with UID 'user123' can create an investment document in their own collection.
-     * @deny (create) User with UID 'user456' cannot create an investment document in 'user123' collection.
-     * @allow (get) User with UID 'user123' can read an investment document in their own collection.
-     * @deny (get) User with UID 'user456' cannot read an investment document in 'user123' collection.
-     * @allow (list) User with UID 'user123' can list investment documents in their own collection.
-     * @deny (list) User with UID 'user456' cannot list investment documents in 'user123' collection.
-     * @allow (update) User with UID 'user123' can update an investment document in their own collection.
-     * @deny (update) User with UID 'user456' cannot update an investment document in 'user123' collection.
-     * @allow (delete) User with UID 'user123' can delete an investment document in their own collection.
-     * @deny (delete) User with UID 'user456' cannot delete an investment document from 'user123' collection.
-     * @principle Enforces document ownership.
+     * @allow (create) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can create an investment.
+     * @deny (create) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot create investment for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (get) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can get their investment.
+     * @deny (get) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot get investment for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (update) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can update their investment.
+     * @deny (update) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot update investment for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (delete) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can delete their investment.
+     * @deny (delete) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot delete investment for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/investments/{investmentId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) && resource != null;
-      allow delete: if isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Secures a user's alerts sub-collection.
+     * @description Rules for user alert documents.
      * @path /users/{userId}/alerts/{alertId}
-     * @allow (create) User with UID 'user123' can create an alert document in their own collection.
-     * @deny (create) User with UID 'user456' cannot create an alert document in 'user123' collection.
-     * @allow (get) User with UID 'user123' can read an alert document in their own collection.
-     * @deny (get) User with UID 'user456' cannot read an alert document in 'user123' collection.
-     * @allow (list) User with UID 'user123' can list alert documents in their own collection.
-     * @deny (list) User with UID 'user456' cannot list alert documents in 'user123' collection.
-     * @allow (update) User with UID 'user123' can update an alert document in their own collection.
-     * @deny (update) User with UID 'user456' cannot update an alert document in 'user123' collection.
-     * @allow (delete) User with UID 'user123' can delete an alert document in their own collection.
-     * @deny (delete) User with UID 'user456' cannot delete an alert document from 'user123' collection.
-     * @principle Enforces document ownership.
+     * @allow (create) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can create an alert.
+     * @deny (create) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot create alert for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (get) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can get their alert.
+     * @deny (get) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot get alert for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (update) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can update their alert.
+     * @deny (update) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot update alert for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @allow (delete) User '5HaBmUz0e0eHTgSEGL19OhZvjp83' can delete their alert.
+     * @deny (delete) User 'ADYj1jEToRcLnI3Jv3Gjhqqy60i2' cannot delete alert for '5HaBmUz0e0eHTgSEGL19OhZvjp83'.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/alerts/{alertId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) && resource != null;
-      allow delete: if isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
   }
 }
