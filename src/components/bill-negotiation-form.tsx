@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useActionState } from "react";
@@ -16,13 +17,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
+import { Terminal, Sparkles } from "lucide-react";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending}>
       {pending ? "Generating..." : "Generate Script"}
+      <Sparkles className="ml-2 h-4 w-4" />
     </Button>
   );
 }
@@ -36,7 +38,7 @@ export function BillNegotiationForm() {
       <Card className="lg:col-span-2">
         <form action={formAction}>
           <CardHeader>
-            <CardTitle>Bill Negotiation Tool</CardTitle>
+            <CardTitle>Bill Details</CardTitle>
             <CardDescription>
               Fill in your bill details and our AI will generate a negotiation
               script for you.
