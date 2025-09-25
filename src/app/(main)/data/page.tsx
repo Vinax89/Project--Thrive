@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Download, Upload, ServerCrash, FileJson } from 'lucide-react';
 import { exportDataAction, type FormState } from './actions';
+import { useUser } from '@/firebase/auth/use-user';
+
 
 function ExportSubmitButton() {
   const { pending } = useFormStatus();
@@ -38,6 +40,7 @@ function triggerDownload(jsonData: string) {
 }
 
 export default function DataManagementPage() {
+  const { user } = useUser();
   const initialState: FormState = { message: '' };
 
   // Wrapper action to handle the download trigger
@@ -64,6 +67,7 @@ export default function DataManagementPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <form action={formAction}>
+             {user?.uid && <input type="hidden" name="userId" value={user.uid} />}
             <CardHeader>
               <CardTitle>Export Financial Data</CardTitle>
               <CardDescription>
