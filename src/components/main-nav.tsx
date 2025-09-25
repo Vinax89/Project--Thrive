@@ -52,30 +52,28 @@ export function MainNav() {
     <SidebarMenu>
       {menuItems.map((item) => (
         <SidebarMenuItem key={item.href}>
-          <Link href={item.href} legacyBehavior passHref>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === item.href}
-              className={cn(
-                "justify-start",
-                pathname === item.href && "bg-primary/10 text-primary hover:bg-primary/20"
-              )}
-              tooltip={{
-                children: item.label,
-                className: "bg-primary text-primary-foreground",
-              }}
-            >
-              <a>
-                <item.icon
-                  className={cn(
-                    "h-4 w-4 shrink-0",
-                    pathname === item.href ? "text-primary" : "text-muted-foreground"
-                  )}
-                />
-                <span className="truncate">{item.label}</span>
-              </a>
-            </SidebarMenuButton>
-          </Link>
+          <SidebarMenuButton
+            asChild
+            isActive={pathname === item.href}
+            className={cn(
+              "justify-start",
+              pathname === item.href && "bg-primary/10 text-primary hover:bg-primary/20"
+            )}
+            tooltip={{
+              children: item.label,
+              className: "bg-primary text-primary-foreground",
+            }}
+          >
+            <Link href={item.href}>
+              <item.icon
+                className={cn(
+                  "h-4 w-4 shrink-0",
+                  pathname === item.href ? "text-primary" : "text-muted-foreground"
+                )}
+              />
+              <span className="truncate">{item.label}</span>
+            </Link>
+          </SidebarMenuButton>
         </SidebarMenuItem>
       ))}
     </SidebarMenu>
