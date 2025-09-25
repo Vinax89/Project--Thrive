@@ -54,14 +54,9 @@ export default function ProfilePage() {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     mode: 'onBlur',
-    defaultValues: {
-      displayName: '',
-      income: 0,
-      savings: 0,
-      savingsGoal: 0,
-    },
   });
 
+  const { formState: { isSubmitting, isDirty } } = form;
 
   useEffect(() => {
     if (profile) {
@@ -180,8 +175,8 @@ export default function ProfilePage() {
                 />
                </div>
 
-              <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>
-                {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
+              <Button type="submit" disabled={isSubmitting || !isDirty}>
+                {isSubmitting ? "Saving..." : "Save Changes"}
               </Button>
             </form>
           </Form>
