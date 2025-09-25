@@ -4,13 +4,12 @@
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { getFinancialEducationContentAction, type FormState } from "./actions";
-
-import { useLocalStorage } from "@/hooks/use-local-storage";
-import { sampleTransactions, sampleDebts } from "@/lib/data";
+import { useUser } from "@/firebase/auth/use-user";
+import { useCollection } from "@/firebase/firestore/hooks";
 import type { Transaction, Debt } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -30,12 +29,12 @@ export default function EducationPage() {
   const initialState: FormState = { message: "" };
   const [state, formAction] = useActionState(getFinancialEducationContentAction, initialState);
 
-  const [transactions] = useLocalStorage<Transaction[]>("transactions", sampleTransactions);
-  const [debts] = useLocalStorage<Debt[]>("debts", sampleDebts);
-
+  const { user } = useUser();
+  const { data: transactions = [] } = useCollection<Transaction>(user ? `users/${user.uid}/transactions` : null);
+  const { data: debts = [] } = useCollection<Debt>(user ? `users/${user.uid}/debts` : null);
+  
+  // These are now hardcoded as we don't have a place to manage them yet
   const totalIncome = 5000;
-  const totalExpenses = transactions.reduce((sum, t) => sum + t.amount, 0);
-  const totalDebt = debts.reduce((sum, d) => sum + d.amount, 0);
   const currentSavings = 4500;
 
   return (
@@ -85,28 +84,4 @@ export default function EducationPage() {
               <CardTitle>Your Personalized Content</CardTitle>
               <CardDescription>
                 Recommended articles, guides, and tips will appear here.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {state.suggestedContent ? (
-                <Alert>
-                  <BookOpen className="h-4 w-4" />
-                  <AlertTitle>Your Learning Plan</AlertTitle>
-                  <AlertDescription className="mt-2 whitespace-pre-wrap font-sans text-sm">
-                    {state.suggestedContent}
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <div className="flex h-[200px] items-center justify-center rounded-md border border-dashed text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {state.message || "Your personalized advice is waiting."}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
+              </d

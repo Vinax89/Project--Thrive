@@ -1,4 +1,3 @@
-
 export type Debt = {
   id?: string;
   name: string;
@@ -7,7 +6,7 @@ export type Debt = {
 };
 
 export type Transaction = {
-  id: string;
+  id?: string;
   name: string;
   amount: number;
   date: string;

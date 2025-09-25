@@ -15,6 +15,7 @@ import {
   FileSignature,
   CircleDollarSign,
   BookOpen,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,11 @@ const menuItems = [
     href: "/dashboard",
     label: "Money Hub",
     icon: CircleDollarSign,
+  },
+  {
+    href: "/transactions",
+    label: "Transactions",
+    icon: Receipt,
   },
   {
     href: "/budget",
