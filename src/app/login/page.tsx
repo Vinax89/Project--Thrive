@@ -28,13 +28,11 @@ import { CircleDollarSign, Loader2 } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { sampleBudgetCategories, sampleDebts, sampleTransactions } from '@/lib/data';
-import { useUser } from '@/firebase/auth/use-user';
 
 export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
-  const { user, loading } = useUser();
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -42,19 +40,6 @@ export default function LoginPage() {
   const [signUpPassword, setSignUpPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-
-
-  if(loading || user) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <CircleDollarSign className="h-6 w-6 animate-spin" />
-          <span>Loading Financial Dashboard...</span>
-        </div>
-      </div>
-    );
-  }
-
 
   const createUserProfile = async (userCredential: UserCredential) => {
     if (!firestore) return;
