@@ -21,6 +21,7 @@ import {
   Scale,
   Banknote,
   Bell,
+  Link2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -74,6 +75,11 @@ const menuItems = [
     href: "/alerts",
     label: "Alerts",
     icon: Bell,
+  },
+  {
+    href: "/link",
+    label: "Link Bank Account",
+    icon: Link2,
   },
   {
     href: "/education",
