@@ -15,6 +15,7 @@ import { CircleDollarSign } from "lucide-react";
 import { useUser } from "@/firebase/auth/use-user";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { FirebaseErrorListener } from "@/components/FirebaseErrorListener";
 
 export default function MainLayout({
   children,
@@ -60,6 +61,7 @@ export default function MainLayout({
           <Header />
           <main className="flex-1 overflow-y-auto">
             <div className="container max-w-screen-2xl p-4 md:p-8">
+              <FirebaseErrorListener />
               {children}
             </div>
           </main>

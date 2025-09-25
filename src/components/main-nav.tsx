@@ -18,6 +18,7 @@ import {
   BookOpen,
   Receipt,
   User,
+  ScanLine,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,11 @@ const menuItems = [
     href: "/transactions",
     label: "Transactions",
     icon: Receipt,
+  },
+  {
+    href: "/scan",
+    label: "Receipt Scanner",
+    icon: ScanLine,
   },
   {
     href: "/budget",
