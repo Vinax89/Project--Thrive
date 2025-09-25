@@ -32,7 +32,6 @@ const profileFormSchema = z.object({
   displayName: z.string().min(2, {
     message: 'Display name must be at least 2 characters.',
   }),
-  email: z.string().email(),
   income: z.coerce.number().min(0).optional(),
   savings: z.coerce.number().min(0).optional(),
   savingsGoal: z.coerce.number().min(0).optional(),
@@ -56,7 +55,6 @@ export default function ProfilePage() {
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       displayName: '',
-      email: '',
       income: 0,
       savings: 0,
       savingsGoal: 0,
@@ -68,7 +66,6 @@ export default function ProfilePage() {
     if (profile) {
       form.reset({
         displayName: profile.displayName || user?.displayName || '',
-        email: profile.email || user?.email || '',
         income: (profile as any).income || 0,
         savings: (profile as any).savings || 0,
         savingsGoal: (profile as any).savingsGoal || 0,
@@ -79,9 +76,7 @@ export default function ProfilePage() {
   async function onSubmit(data: ProfileFormValues) {
     if (!profile) return;
     try {
-      // Omit email from the update data
-      const { email, ...updateData } = data;
-      await update(updateData);
+      await update(data);
       toast({
         title: 'Profile updated!',
         description: 'Your changes have been saved successfully.',
@@ -133,19 +128,12 @@ export default function ProfilePage() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email Address</FormLabel>
-                      <FormControl>
-                        <Input placeholder="your@email.com" disabled {...field} />
-                      </FormControl>
-                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-2">
+                  <FormLabel>Email Address</FormLabel>
+                  <p className="text-sm text-muted-foreground pt-2">
+                    {user?.email || 'No email associated with this account.'}
+                  </p>
+                </div>
               </div>
 
                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
