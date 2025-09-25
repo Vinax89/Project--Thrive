@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -18,7 +18,8 @@ import {
   TrendingUp,
   FileSignature,
   ScanLine,
-  Scale
+  Scale,
+  Banknote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -72,6 +73,11 @@ const menuItems = [
     href: "/education",
     label: "Education",
     icon: BookOpen,
+  },
+   {
+    href: "/viability",
+    label: "Income Viability",
+    icon: Banknote,
   },
    {
     href: "/profile",
