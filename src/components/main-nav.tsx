@@ -23,6 +23,7 @@ import {
   Bell,
   Link2,
   Trophy,
+  Percent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -96,6 +97,11 @@ const menuItems = [
     href: "/viability",
     label: "Income Viability",
     icon: Banknote,
+  },
+  {
+    href: "/tax",
+    label: "Tax Optimizer",
+    icon: Percent,
   },
    {
     href: "/profile",
