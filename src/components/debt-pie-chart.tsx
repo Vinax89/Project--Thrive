@@ -79,6 +79,7 @@ export function DebtPieChart({ debts }: DebtPieChartProps) {
                 <Cell key={`cell-${index}`} fill={entry.fill} />
               ))}
             </Pie>
+             <ChartLegend content={<ChartLegendContent />} />
           </PieChart>
         </ChartContainer>
       </CardContent>
@@ -87,9 +88,6 @@ export function DebtPieChart({ debts }: DebtPieChartProps) {
         <span className="text-3xl font-bold font-headline">
           ${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
-        <div className="w-full pt-4">
-            <ChartLegend content={<ChartLegendContent />} />
-        </div>
       </div>
     </Card>
   );
