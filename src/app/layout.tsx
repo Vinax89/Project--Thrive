@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export const metadata: Metadata = {
   title: 'Project: Thrive',
@@ -23,7 +24,9 @@ export default function RootLayout({
       </head>
       <body className={cn("font-body antialiased", "min-h-screen bg-background")}>
         <FirebaseClientProvider>
-          {children}
+          <TooltipProvider>
+            {children}
+          </TooltipProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>

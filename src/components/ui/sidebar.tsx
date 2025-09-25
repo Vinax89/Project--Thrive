@@ -15,7 +15,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
@@ -130,25 +129,25 @@ const SidebarProvider = React.forwardRef<
     )
 
     return (
-      <TooltipProvider delayDuration={0}>
-        <div
-          style={
-              {
-                "--sidebar-width": SIDEBAR_WIDTH,
-                "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-                "--sidebar-width-mobile": SIDEBAR_WIDTH_MOBILE,
-              } as React.CSSProperties
-            }
-          className={cn(
-            "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
-            className
-          )}
-          ref={ref}
-          {...props}
-        >
-          {children}
-        </div>
-      </TooltipProvider>
+        <SidebarContext.Provider value={contextValue}>
+            <div
+            style={
+                {
+                    "--sidebar-width": SIDEBAR_WIDTH,
+                    "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+                    "--sidebar-width-mobile": SIDEBAR_WIDTH_MOBILE,
+                } as React.CSSProperties
+                }
+            className={cn(
+                "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
+                className
+            )}
+            ref={ref}
+            {...props}
+            >
+            {children}
+            </div>
+      </SidebarContext.Provider>
     )
   }
 )
