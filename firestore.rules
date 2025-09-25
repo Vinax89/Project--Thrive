@@ -1,121 +1,145 @@
 /**
- * @fileoverview Firestore Security Rules for ChatPay application.
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model. Each user's data is
- * stored under their unique user ID, ensuring that only the authenticated user
- * can access their own data.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a strict user-ownership model for the ChatPay application.
  *
  * Data Structure:
- * All data is nested under `/users/{userId}`, with subcollections for debts,
- * obligations, budgets, budget items, and investments. This hierarchical
- * structure simplifies the security rules by leveraging path-based authorization.
+ * - All user-specific data is nested under `/users/{userId}`.
+ * - Each user owns their Debt, Obligation, Budget, BudgetItem, and Investment data, stored as subcollections.
  *
  * Key Security Decisions:
- * - Users can only access their own data.
- * - Data consistency is enforced by validating the 'id' field on create operations
- *   to match the document ID, and by enforcing immutability of this field on updates.
+ * - Users can only access their own data, ensuring data isolation and authorization independence.
+ * - Listing documents is restricted to the owner of the user-scoped subcollections.
+ * - Rules are designed to avoid costly `get()` calls for authorization checks by leveraging the path-based ownership.
+ * - In prototyping mode, data validation is relaxed, focusing on authorization and relational integrity.
  *
  * Denormalization for Authorization:
- * The data model is structured to avoid the need for `get()` calls in security rules.
- * User ownership is implied by the path, eliminating the need to store redundant
- * user ID fields within the documents themselves (except for validation purposes).
+ * - The rules leverage the hierarchical structure of Firestore to avoid `get()` calls. The user ID is embedded in the path for each document,
+ *   allowing for efficient ownership checks without additional reads.
+ *
+ * Structural Segregation:
+ * - All private user data is stored under the `/users/{userId}` path.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if the user is signed in.
+    /**
+     * @description Checks if the request is authenticated.
+     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Helper function to check if the authenticated user ID matches the requested user ID.
+    /**
+     * @description Checks if the requested user ID matches the authenticated user's ID.
+     */
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Helper function to check if the authenticated user is the existing owner of the document.
+    /**
+     * @description Checks if the authenticated user is the existing owner of the document.
+     */
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
 
+    /****************** User Profile Rules ******************/
+
     /**
-     * @description Allows a user to read and write their own profile data.
+     * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (create) - User with matching userId can create their profile.
-     * @allow (get, update, delete) - User with matching userId can get, update, and delete their profile.
-     * @deny (create) - User attempts to create a profile with a userId that doesn't match their auth.uid.
-     * @deny (update, delete) - User attempts to update or delete a profile with a userId that doesn't match their auth.uid, or the profile doesn't exist.
+     * @allow (create) User with UID 'user123' can create their profile if request.auth.uid == 'user123'.
+     * @allow (get) User with UID 'user123' can read their profile.
+     * @allow (update) User with UID 'user123' can update their profile.
+     * @allow (delete) User with UID 'user123' can delete their profile.
+     * @deny (create) User with UID 'user456' cannot create a profile with ID 'user123'.
+     * @deny (get) User with UID 'user456' cannot read profile with ID 'user123'.
      * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow list: if false; // Listing users is not permitted.
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isExistingOwner(userId);
+      allow list: if false; // User listing is disabled.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id; // Enforce immutability of userId.
       allow delete: if isExistingOwner(userId);
     }
 
+    /****************** Debt Rules ******************/
+
     /**
-     * @description Allows a user to manage their own debt data.
+     * @description Controls access to debt documents within a user's profile.
      * @path /users/{userId}/debts/{debtId}
-     * @allow (create) - User with matching userId can create debt documents.
-     * @allow (get, list, update, delete) - User with matching userId can get, list, update, and delete their own debt documents.
-     * @deny (create) - User attempts to create a debt document with a userId that doesn't match their auth.uid.
-     * @deny (update, delete) - User attempts to update or delete a debt document with a userId that doesn't match their auth.uid, or the debt document doesn't exist.
-     * @principle Enforces document ownership and prevents unauthorized access.
+     * @allow (create) User with UID 'user123' can create a debt under their profile.
+     * @allow (get) User with UID 'user123' can read a debt under their profile.
+     * @allow (update) User with UID 'user123' can update a debt under their profile.
+     * @allow (delete) User with UID 'user123' can delete a debt under their profile.
+     * @deny (create) User with UID 'user456' cannot create a debt under user 'user123''s profile.
+     * @deny (get) User with UID 'user456' cannot read a debt under user 'user123''s profile.
+     * @principle Restricts access to a user's own debt data.
      */
     match /users/{userId}/debts/{debtId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) ;
-      allow update: if isExistingOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == resource.data.userProfileId; //userProfileId immutable
       allow delete: if isExistingOwner(userId);
     }
 
+    /****************** Obligation Rules ******************/
+
     /**
-     * @description Allows a user to manage their own obligation data.
+     * @description Controls access to obligation documents within a user's profile.
      * @path /users/{userId}/obligations/{obligationId}
-     * @allow (create) - User with matching userId can create obligation documents.
-     * @allow (get, list, update, delete) - User with matching userId can get, list, update, and delete their own obligation documents.
-     * @deny (create) - User attempts to create an obligation document with a userId that doesn't match their auth.uid.
-     * @deny (update, delete) - User attempts to update or delete an obligation document with a userId that doesn't match their auth.uid, or the obligation document doesn't exist.
-     * @principle Enforces document ownership and prevents unauthorized access.
+     * @allow (create) User with UID 'user123' can create an obligation under their profile.
+     * @allow (get) User with UID 'user123' can read an obligation under their profile.
+     * @allow (update) User with UID 'user123' can update an obligation under their profile.
+     * @allow (delete) User with UID 'user123' can delete an obligation under their profile.
+     * @deny (create) User with UID 'user456' cannot create an obligation under user 'user123''s profile.
+     * @deny (get) User with UID 'user456' cannot read an obligation under user 'user123''s profile.
+     * @principle Restricts access to a user's own obligation data.
      */
     match /users/{userId}/obligations/{obligationId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == resource.data.userProfileId; //userProfileId immutable
       allow delete: if isExistingOwner(userId);
     }
 
+    /****************** Budget Rules ******************/
+
     /**
-     * @description Allows a user to manage their own budget data.
+     * @description Controls access to budget documents within a user's profile.
      * @path /users/{userId}/budgets/{budgetId}
-     * @allow (create) - User with matching userId can create budget documents.
-     * @allow (get, list, update, delete) - User with matching userId can get, list, update, and delete their own budget documents.
-     * @deny (create) - User attempts to create a budget document with a userId that doesn't match their auth.uid.
-     * @deny (update, delete) - User attempts to update or delete a budget document with a userId that doesn't match their auth.uid, or the budget document doesn't exist.
-     * @principle Enforces document ownership and prevents unauthorized access.
+     * @allow (create) User with UID 'user123' can create a budget under their profile.
+     * @allow (get) User with UID 'user123' can read a budget under their profile.
+     * @allow (update) User with UID 'user123' can update a budget under their profile.
+     * @allow (delete) User with UID 'user123' can delete a budget under their profile.
+     * @deny (create) User with UID 'user456' cannot create a budget under user 'user123''s profile.
+     * @deny (get) User with UID 'user456' cannot read a budget under user 'user123''s profile.
+     * @principle Restricts access to a user's own budget data.
      */
     match /users/{userId}/budgets/{budgetId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == resource.data.userProfileId; //userProfileId immutable
       allow delete: if isExistingOwner(userId);
     }
 
+    /****************** Budget Item Rules ******************/
+
     /**
-     * @description Allows a user to manage their own budget item data.
+     * @description Controls access to budget item documents within a user's budget.
      * @path /users/{userId}/budgets/{budgetId}/budgetItems/{budgetItemId}
-     * @allow (create) - User with matching userId can create budget item documents.
-     * @allow (get, list, update, delete) - User with matching userId can get, list, update, and delete their own budget item documents.
-     * @deny (create) - User attempts to create a budget item document with a userId that doesn't match their auth.uid.
-     * @deny (update, delete) - User attempts to update or delete a budget item document with a userId that doesn't match their auth.uid, or the budget item document doesn't exist.
-     * @principle Enforces document ownership and prevents unauthorized access.
+     * @allow (create) User with UID 'user123' can create a budget item under their budget.
+     * @allow (get) User with UID 'user123' can read a budget item under their budget.
+     * @allow (update) User with UID 'user123' can update a budget item under their budget.
+     * @allow (delete) User with UID 'user123' can delete a budget item under their budget.
+     * @deny (create) User with UID 'user456' cannot create a budget item under user 'user123''s budget.
+     * @deny (get) User with UID 'user456' cannot read a budget item under user 'user123''s budget.
+     * @principle Restricts access to a user's own budget item data.
      */
     match /users/{userId}/budgets/{budgetId}/budgetItems/{budgetItemId} {
       allow get: if isOwner(userId);
@@ -125,16 +149,40 @@ service cloud.firestore {
       allow delete: if isExistingOwner(userId);
     }
 
+    /****************** Investment Rules ******************/
+
     /**
-     * @description Allows a user to manage their own investment data.
+     * @description Controls access to investment documents within a user's profile.
      * @path /users/{userId}/investments/{investmentId}
-     * @allow (create) - User with matching userId can create investment documents.
-     * @allow (get, list, update, delete) - User with matching userId can get, list, update, and delete their own investment documents.
-     * @deny (create) - User attempts to create an investment document with a userId that doesn't match their auth.uid.
-     * @deny (update, delete) - User attempts to update or delete an investment document with a userId that doesn't match their auth.uid, or the investment document doesn't exist.
-     * @principle Enforces document ownership and prevents unauthorized access.
+     * @allow (create) User with UID 'user123' can create an investment under their profile.
+     * @allow (get) User with UID 'user123' can read an investment under their profile.
+     * @allow (update) User with UID 'user123' can update an investment under their profile.
+     * @allow (delete) User with UID 'user123' can delete an investment under their profile.
+     * @deny (create) User with UID 'user456' cannot create an investment under user 'user123''s profile.
+     * @deny (get) User with UID 'user456' cannot read an investment under user 'user123''s profile.
+     * @principle Restricts access to a user's own investment data.
      */
     match /users/{userId}/investments/{investmentId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == resource.data.userProfileId; //userProfileId immutable
+      allow delete: if isExistingOwner(userId);
+    }
+
+     /****************** Transaction Rules (MISSING ENTITY) ******************/
+    /**
+     * @description Controls access to transaction documents within a user's profile.
+     * @path /users/{userId}/transactions/{transactionId}
+     * @allow (create) User with UID 'user123' can create an transaction under their profile.
+     * @allow (get) User with UID 'user123' can read an transaction under their profile.
+     * @allow (update) User with UID 'user123' can update an transaction under their profile.
+     * @allow (delete) User with UID 'user123' can delete an transaction under their profile.
+     * @deny (create) User with UID 'user456' cannot create a transaction under user 'user123''s profile.
+     * @deny (get) User with UID 'user456' cannot read an transaction under user 'user123''s profile.
+     * @principle Restricts access to a user's own transaction data.
+     */
+    match /users/{userId}/transactions/{transactionId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
       allow create: if isOwner(userId);
