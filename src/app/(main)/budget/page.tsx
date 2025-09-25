@@ -19,7 +19,7 @@ import { PlusCircle, Trash2, Sparkles, Terminal, Pencil } from "lucide-react";
 import { getEnvelopeBudgetAction, FormState } from "./actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection, doc, arrayUnion } from "firebase/firestore";
+import { collection, doc, arrayUnion, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { EditBudgetCategoryDialog } from "@/components/edit-budget-category-dialog";
 
@@ -42,7 +42,7 @@ export default function BudgetPage() {
     () => (user && firestore ? doc(firestore, `users/${user.uid}`) : null),
     [user, firestore]
   );
-  const { data: profile, update: updateUser } = useDoc<UserProfile>(userDocRef);
+  const { data: profile } = useDoc<UserProfile>(userDocRef);
 
   const budgetCategoriesColRef = useMemoFirebase(
     () => (user && firestore ? collection(firestore, `users/${user.uid}/budgetCategories`) : null),
@@ -88,10 +88,10 @@ export default function BudgetPage() {
         await add(data as Omit<BudgetCategory, 'id'>);
         toast({ title: "Category Added", description: `${data.name} has been added.`});
 
-        if (isFirstCategory) {
+        if (isFirstCategory && userDocRef) {
             const earnedBadges = (profile as any)?.earnedBadges || [];
             if (!earnedBadges.includes('first-budget')) {
-               await updateUser({ earnedBadges: arrayUnion('first-budget') });
+               await updateDoc(userDocRef, { earnedBadges: arrayUnion('first-budget') });
                toast({
                   title: "Achievement Unlocked!",
                   description: "You've earned the 'Budget Boss' badge!",

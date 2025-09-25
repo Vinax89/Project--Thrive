@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, Pencil } from "lucide-react";
 import { EditDebtDialog } from "@/components/edit-debt-dialog";
 import { useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection, doc, arrayUnion } from "firebase/firestore";
+import { collection, doc, arrayUnion, updateDoc } from "firebase/firestore";
 import { DebtPieChart } from "@/components/debt-pie-chart";
 import { useToast } from "@/hooks/use-toast";
 
@@ -37,7 +37,7 @@ export default function DebtsPage() {
     () => (user && firestore ? doc(firestore, `users/${user.uid}`) : null),
     [user, firestore]
   );
-  const { data: profile, update: updateUser } = useDoc<UserProfile>(userDocRef);
+  const { data: profile } = useDoc<UserProfile>(userDocRef);
 
   const debtsColRef = useMemoFirebase(
     () => (user && firestore ? collection(firestore, `users/${user.uid}/debts`) : null),
@@ -73,14 +73,16 @@ export default function DebtsPage() {
   const handleRemove = async (debtId: string) => {
     await remove(debtId);
     
-    // Check if user has already earned this badge
-    const earnedBadges = (profile as any)?.earnedBadges || [];
-    if (!earnedBadges.includes('debt-demolisher')) {
-      await updateUser({ earnedBadges: arrayUnion('debt-demolisher') });
-      toast({
-        title: "Achievement Unlocked!",
-        description: "You've earned the 'Debt Demolisher' badge. Keep it up!",
-      });
+    if (userDocRef) {
+        // Check if user has already earned this badge
+        const earnedBadges = (profile as any)?.earnedBadges || [];
+        if (!earnedBadges.includes('debt-demolisher')) {
+          await updateDoc(userDocRef, { earnedBadges: arrayUnion('debt-demolisher') });
+          toast({
+            title: "Achievement Unlocked!",
+            description: "You've earned the 'Debt Demolisher' badge. Keep it up!",
+          });
+        }
     }
   };
 
