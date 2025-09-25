@@ -84,6 +84,11 @@ export default function BudgetPage() {
     ? JSON.parse(state.suggestedAllocations)
     : null;
 
+  // Prepare simplified data for the AI prompt
+  const simplifiedExpenses = JSON.stringify(transactions.map(({ name, amount, category }) => ({ name, amount, category })));
+  const simplifiedDebts = JSON.stringify(debts.map(({ name, amount, type }) => ({ name, amount, type })));
+
+
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
       <div className="flex justify-between items-center">
@@ -157,8 +162,8 @@ export default function BudgetPage() {
            <Card>
              <form action={formAction}>
                 <input type="hidden" name="income" value={totalIncome} />
-                <input type="hidden" name="expenses" value={JSON.stringify(transactions)} />
-                <input type="hidden" name="priorDebts" value={JSON.stringify(debts)} />
+                <input type="hidden" name="expenses" value={simplifiedExpenses} />
+                <input type="hidden" name="priorDebts" value={simplifiedDebts} />
 
                 <CardHeader>
                     <CardTitle>AI Budget Advisor</CardTitle>
