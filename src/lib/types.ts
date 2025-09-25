@@ -19,3 +19,16 @@ export type BudgetCategory = {
   allocated: number;
   spent: number;
 };
+
+export type UserProfile = {
+    id?: string;
+    uid: string;
+    email: string;
+    displayName: string;
+    photoURL?: string;
+    income?: number;
+    savings?: number;
+    savingsGoal?: number;
+    createdAt: any;
+    lastLogin: any;
+}

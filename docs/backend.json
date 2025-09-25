@@ -19,6 +19,18 @@
           "type": "string",
           "format": "uri",
           "description": "URL of the user's profile picture."
+        },
+        "income": {
+            "type": "number",
+            "description": "The user's monthly income."
+        },
+        "savings": {
+            "type": "number",
+            "description": "The user's total savings."
+        },
+        "savingsGoal": {
+            "type": "number",
+            "description": "The user's savings goal."
         }
       },
       "required": ["displayName", "email"]

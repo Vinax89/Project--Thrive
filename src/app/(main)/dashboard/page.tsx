@@ -26,19 +26,20 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/firebase/auth/use-user";
 import { useCollection, useDoc } from "@/firebase/firestore/hooks";
-import type { Transaction, Debt } from "@/lib/types";
+import type { Transaction, Debt, UserProfile } from "@/lib/types";
 
 export default function DashboardPage() {
   const { user } = useUser();
+  const { data: profile } = useDoc<UserProfile>(user ? `users/${user.uid}` : null);
   const { data: transactions = [] } = useCollection<Transaction>(user ? `users/${user.uid}/transactions` : null);
   const { data: debts = [] } = useCollection<Debt>(user ? `users/${user.uid}/debts` : null);
 
-  const totalIncome = 5000;
+  const totalIncome = profile?.income || 0;
   const totalSpending = transactions.reduce((sum, t) => sum + t.amount, 0);
   const totalDebt = debts.reduce((sum, d) => sum + d.amount, 0);
-  const savingsGoal = 10000;
-  const currentSavings = 4500;
-  const savingsProgress = (currentSavings / savingsGoal) * 100;
+  const savingsGoal = profile?.savingsGoal || 0;
+  const currentSavings = profile?.savings || 0;
+  const savingsProgress = savingsGoal > 0 ? (currentSavings / savingsGoal) * 100 : 0;
 
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
@@ -57,7 +58,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalIncome.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+10.2% from last month</p>
+            <p className="text-xs text-muted-foreground">Your monthly income</p>
           </CardContent>
         </Card>
         <Card>
@@ -67,7 +68,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalSpending.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">-5.1% from last month</p>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
         <Card>
@@ -79,7 +80,7 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">
               ${(totalIncome - totalSpending).toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
         <Card>
@@ -89,7 +90,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalDebt.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Down ${500} from last month</p>
+            <p className="text-xs text-muted-foreground">Across all accounts</p>
           </CardContent>
         </Card>
       </div>
@@ -132,7 +133,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Savings Goal</CardTitle>
             <CardDescription>
-              Your progress towards your ${savingsGoal.toLocaleString()} goal.
+              Your progress towards your ${savingsGoal > 0 ? savingsGoal.toLocaleString() : 'goal'}.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
@@ -144,7 +145,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="text-sm text-muted-foreground">
-              You're on track! Keep going, you've got this. At this rate, you'll reach your goal in approximately 6 months.
+                {savingsGoal > 0 ? "You're on track! Keep going, you've got this." : "Set a savings goal in your profile to track your progress."}
             </div>
           </CardContent>
         </Card>

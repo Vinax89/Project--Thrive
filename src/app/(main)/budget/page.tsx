@@ -13,10 +13,10 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useUser } from "@/firebase/auth/use-user";
-import { useCollection } from "@/firebase/firestore/hooks";
+import { useCollection, useDoc } from "@/firebase/firestore/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { BudgetCategory, Debt, Transaction } from "@/lib/types";
+import type { BudgetCategory, Debt, Transaction, UserProfile } from "@/lib/types";
 import { PlusCircle, Sparkles, Trash2 } from "lucide-react";
 import {
   Dialog,
@@ -41,6 +41,7 @@ function SubmitButton() {
 
 export default function BudgetPage() {
   const { user } = useUser();
+  const { data: profile } = useDoc<UserProfile>(user ? `users/${user.uid}` : null);
   const { data: budgetCategories = [], add, remove } = useCollection<BudgetCategory>(
     user ? `users/${user.uid}/budgetCategories` : null
   );
@@ -54,7 +55,7 @@ export default function BudgetPage() {
   const initialState: FormState = { message: "" };
   const [state, formAction] = useActionState(getEnvelopeBudgetAction, initialState);
 
-  const totalIncome = 5000; // This is hardcoded for now
+  const totalIncome = profile?.income || 0;
 
   const handleAddCategory = () => {
     if (newCategoryName && newCategoryAllocated) {

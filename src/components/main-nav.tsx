@@ -17,6 +17,7 @@ import {
   CircleDollarSign,
   BookOpen,
   Receipt,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +56,11 @@ const menuItems = [
     href: "/education",
     label: "Education",
     icon: BookOpen,
+  },
+   {
+    href: "/profile",
+    label: "Profile",
+    icon: User,
   },
 ];
 

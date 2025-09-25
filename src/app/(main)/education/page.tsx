@@ -5,8 +5,8 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { getFinancialEducationContentAction, type FormState } from "./actions";
 import { useUser } from "@/firebase/auth/use-user";
-import { useCollection } from "@/firebase/firestore/hooks";
-import type { Transaction, Debt } from "@/lib/types";
+import { useCollection, useDoc } from "@/firebase/firestore/hooks";
+import type { Transaction, Debt, UserProfile } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,12 +30,12 @@ export default function EducationPage() {
   const [state, formAction] = useActionState(getFinancialEducationContentAction, initialState);
 
   const { user } = useUser();
+  const { data: profile } = useDoc<UserProfile>(user ? `users/${user.uid}` : null);
   const { data: transactions = [] } = useCollection<Transaction>(user ? `users/${user.uid}/transactions` : null);
   const { data: debts = [] } = useCollection<Debt>(user ? `users/${user.uid}/debts` : null);
   
-  // These are now hardcoded as we don't have a place to manage them yet
-  const totalIncome = 5000;
-  const currentSavings = 4500;
+  const totalIncome = profile?.income || 0;
+  const currentSavings = profile?.savings || 0;
 
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
