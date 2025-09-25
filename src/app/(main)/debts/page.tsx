@@ -89,9 +89,9 @@ export default function DebtsPage() {
     <div className="flex flex-col gap-8 animate-fade-slide-in">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Debts</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Debt Analysis</h1>
           <p className="text-muted-foreground">
-            Manage your outstanding debts.
+            Analyze your outstanding debts and liabilities.
           </p>
         </div>
         <Button onClick={handleAddClick}>
@@ -106,7 +106,7 @@ export default function DebtsPage() {
                 <CardHeader>
                 <CardTitle>All Debts</CardTitle>
                 <CardDescription>
-                    A complete list of your financial obligations. Totaling ${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
+                    Your total debt is ${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
