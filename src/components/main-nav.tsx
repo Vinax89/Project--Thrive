@@ -22,6 +22,7 @@ import {
   Banknote,
   Bell,
   Link2,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -75,6 +76,11 @@ const menuItems = [
     href: "/alerts",
     label: "Alerts",
     icon: Bell,
+  },
+  {
+    href: "/achievements",
+    label: "Achievements",
+    icon: Trophy,
   },
   {
     href: "/link",

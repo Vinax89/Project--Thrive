@@ -42,6 +42,7 @@ export type UserProfile = {
     income?: number;
     savings?: number;
     savingsGoal?: number;
+    earnedBadges?: string[];
 }
 
 export type Alert = {

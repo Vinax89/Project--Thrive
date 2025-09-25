@@ -17,18 +17,27 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/firebase/auth/use-user";
-import { useCollection } from "@/firebase/firestore/hooks";
-import type { Debt } from "@/lib/types";
+import { useCollection, useDoc } from "@/firebase/firestore/hooks";
+import type { Debt, UserProfile } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, Pencil } from "lucide-react";
 import { EditDebtDialog } from "@/components/edit-debt-dialog";
 import { useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection } from "firebase/firestore";
+import { collection, doc, arrayUnion } from "firebase/firestore";
 import { DebtPieChart } from "@/components/debt-pie-chart";
+import { useToast } from "@/hooks/use-toast";
+
 
 export default function DebtsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const userDocRef = useMemoFirebase(
+    () => (user && firestore ? doc(firestore, `users/${user.uid}`) : null),
+    [user, firestore]
+  );
+  const { data: profile, update: updateUser } = useDoc<UserProfile>(userDocRef);
 
   const debtsColRef = useMemoFirebase(
     () => (user && firestore ? collection(firestore, `users/${user.uid}/debts`) : null),
@@ -60,6 +69,21 @@ export default function DebtsPage() {
     setIsDialogOpen(false);
     setSelectedDebt(null);
   };
+
+  const handleRemove = async (debtId: string) => {
+    await remove(debtId);
+    
+    // Check if user has already earned this badge
+    const earnedBadges = (profile as any)?.earnedBadges || [];
+    if (!earnedBadges.includes('debt-demolisher')) {
+      await updateUser({ earnedBadges: arrayUnion('debt-demolisher') });
+      toast({
+        title: "Achievement Unlocked!",
+        description: "You've earned the 'Debt Demolisher' badge. Keep it up!",
+      });
+    }
+  };
+
 
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
@@ -119,7 +143,7 @@ export default function DebtsPage() {
                             <Button variant="ghost" size="icon" onClick={() => handleEditClick(debt)}>
                                 <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => debt.id && remove(debt.id)}>
+                            <Button variant="ghost" size="icon" onClick={() => debt.id && handleRemove(debt.id)}>
                                 <Trash2 className="h-4 w-4 text-muted-foreground" />
                             </Button>
                         </TableCell>

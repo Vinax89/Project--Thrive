@@ -13,7 +13,12 @@
         "lastLogin": { "type": "string", "format": "date-time", "description": "Timestamp of the user's last login." },
         "income": { "type": "number", "description": "The user's monthly income." },
         "savings": { "type": "number", "description": "The user's total savings." },
-        "savingsGoal": { "type": "number", "description": "The user's savings goal." }
+        "savingsGoal": { "type": "number", "description": "The user's savings goal." },
+        "earnedBadges": {
+            "type": "array",
+            "description": "An array of badge IDs the user has earned.",
+            "items": { "type": "string" }
+        }
       },
       "required": ["uid", "email"]
     },

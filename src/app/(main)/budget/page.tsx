@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useUser } from "@/firebase/auth/use-user";
-import { useCollection } from "@/firebase/firestore/hooks";
+import { useCollection, useDoc } from "@/firebase/firestore/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { BudgetCategory, Transaction, Debt } from "@/lib/types";
+import type { BudgetCategory, Transaction, Debt, UserProfile } from "@/lib/types";
 import { PlusCircle, Trash2, Sparkles, Terminal } from "lucide-react";
 import {
   Dialog,
@@ -26,7 +26,8 @@ import {
 import { getEnvelopeBudgetAction, FormState } from "./actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection } from "firebase/firestore";
+import { collection, doc, arrayUnion } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -41,6 +42,13 @@ function SubmitButton() {
 export default function BudgetPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const userDocRef = useMemoFirebase(
+    () => (user && firestore ? doc(firestore, `users/${user.uid}`) : null),
+    [user, firestore]
+  );
+  const { data: profile, update: updateUser } = useDoc<UserProfile>(userDocRef);
 
   const budgetCategoriesColRef = useMemoFirebase(
     () => (user && firestore ? collection(firestore, `users/${user.uid}/budgetCategories`) : null),
@@ -68,12 +76,23 @@ export default function BudgetPage() {
   const initialState: FormState = { message: "" };
   const [state, formAction] = useActionState(getEnvelopeBudgetAction, initialState);
 
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (newCategoryName && newCategoryAllocated) {
-      add({
+      await add({
         name: newCategoryName,
         allocated: parseFloat(newCategoryAllocated),
       });
+
+      // Check for first budget badge
+      const earnedBadges = (profile as any)?.earnedBadges || [];
+      if (!earnedBadges.includes('first-budget') && budgetCategories.length === 0) {
+         await updateUser({ earnedBadges: arrayUnion('first-budget') });
+         toast({
+            title: "Achievement Unlocked!",
+            description: "You've earned the 'Budget Boss' badge!",
+        });
+      }
+
       setNewCategoryName("");
       setNewCategoryAllocated("");
       setIsDialogOpen(false);
