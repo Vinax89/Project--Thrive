@@ -9,7 +9,7 @@ import {
   signInWithPopup,
   UserCredential,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, writeBatch, getDoc, collection } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -43,24 +43,25 @@ export default function LoginPage() {
   const createUserProfile = async (userCredential: UserCredential) => {
     if (!firestore) return;
     const user = userCredential.user;
-    const isNewUser = userCredential.metadata.creationTime === userCredential.metadata.lastSignInTime;
-
     const userRef = doc(firestore, 'users', user.uid);
-    const userData = {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName || user.email?.split('@')[0],
-      photoURL: user.photoURL,
-      createdAt: serverTimestamp(),
-      lastLogin: serverTimestamp(),
-      // Initialize with default values
-      income: 5000,
-      savings: 1000,
-      savingsGoal: 10000,
-      earnedBadges: [],
-    };
-    
-    if (isNewUser) {
+    const userDoc = await getDoc(userRef);
+
+    if (!userDoc.exists()) {
+        // This is a new user
+        const userData = {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName || user.email?.split('@')[0],
+            photoURL: user.photoURL,
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp(),
+            // Initialize with default values
+            income: 5000,
+            savings: 1000,
+            savingsGoal: 10000,
+            earnedBadges: [],
+        };
+        
         const batch = writeBatch(firestore);
         
         // Set user profile
