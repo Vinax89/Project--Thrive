@@ -1,3 +1,6 @@
+
+"use client";
+
 import {
   Card,
   CardContent,
@@ -20,12 +23,18 @@ import {
   DollarSign,
   Landmark,
 } from "lucide-react";
-import { sampleTransactions } from "@/lib/data";
+import { sampleTransactions, sampleDebts } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import type { Transaction, Debt } from "@/lib/types";
 
 export default function DashboardPage() {
+  const [transactions] = useLocalStorage<Transaction[]>("transactions", sampleTransactions);
+  const [debts] = useLocalStorage<Debt[]>("debts", sampleDebts);
+  
   const totalIncome = 5000;
-  const totalSpending = 2350.75;
+  const totalSpending = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const totalDebt = debts.reduce((sum, d) => sum + d.amount, 0);
   const savingsGoal = 10000;
   const currentSavings = 4500;
   const savingsProgress = (currentSavings / savingsGoal) * 100;
@@ -78,8 +87,8 @@ export default function DashboardPage() {
             <Landmark className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$36,750</div>
-            <p className="text-xs text-muted-foreground">Down $500 from last month</p>
+            <div className="text-2xl font-bold">${totalDebt.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Down ${500} from last month</p>
           </CardContent>
         </Card>
       </div>
@@ -100,7 +109,7 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sampleTransactions.map((transaction) => (
+                {transactions.slice(0, 5).map((transaction) => (
                   <TableRow key={transaction.id}>
                     <TableCell>
                       <div className="font-medium">{transaction.name}</div>

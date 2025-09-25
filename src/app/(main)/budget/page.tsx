@@ -1,3 +1,6 @@
+
+"use client";
+
 import {
   Card,
   CardContent,
@@ -7,8 +10,12 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { sampleBudgetCategories } from "@/lib/data";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import type { BudgetCategory } from "@/lib/types";
 
 export default function BudgetPage() {
+  const [budgetCategories] = useLocalStorage<BudgetCategory[]>("budget-categories", sampleBudgetCategories);
+
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
       <div>
@@ -18,7 +25,7 @@ export default function BudgetPage() {
         </p>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {sampleBudgetCategories.map((category) => {
+        {budgetCategories.map((category) => {
           const progress = (category.spent / category.allocated) * 100;
           return (
             <Card key={category.name}>

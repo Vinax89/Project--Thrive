@@ -1,3 +1,6 @@
+
+"use client";
+
 import {
   Card,
   CardContent,
@@ -16,9 +19,12 @@ import {
 import { DebtPieChart } from "@/components/debt-pie-chart";
 import { sampleDebts } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import type { Debt } from "@/lib/types";
 
 export default function DebtsPage() {
-  const totalDebt = sampleDebts.reduce((sum, debt) => sum + debt.amount, 0);
+  const [debts] = useLocalStorage<Debt[]>("debts", sampleDebts);
+  const totalDebt = debts.reduce((sum, debt) => sum + debt.amount, 0);
 
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
@@ -30,7 +36,7 @@ export default function DebtsPage() {
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
-          <DebtPieChart debts={sampleDebts} />
+          <DebtPieChart debts={debts} />
         </div>
         <div className="lg:col-span-2">
           <Card>
@@ -50,7 +56,7 @@ export default function DebtsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sampleDebts.map((debt) => (
+                  {debts.map((debt) => (
                     <TableRow key={debt.name}>
                       <TableCell className="font-medium">{debt.name}</TableCell>
                       <TableCell>
