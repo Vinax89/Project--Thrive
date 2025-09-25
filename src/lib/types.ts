@@ -1,4 +1,5 @@
 
+
 export type Debt = {
   id?: string;
   name: string;

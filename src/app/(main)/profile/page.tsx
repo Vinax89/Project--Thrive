@@ -78,6 +78,7 @@ export default function ProfilePage() {
   }, [profile, user, form]);
 
   async function onSubmit(data: ProfileFormValues) {
+    if (!profile) return;
     try {
       await update(data);
       toast({
