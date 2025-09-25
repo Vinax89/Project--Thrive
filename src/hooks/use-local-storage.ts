@@ -5,7 +5,8 @@ import { useState, useEffect } from 'react';
 
 function getValue<T>(key: string, initialValue: T | (() => T)) {
     if (typeof window === 'undefined') {
-        return initialValue instanceof Function ? initialValue() : initialValue;
+        const val = initialValue instanceof Function ? initialValue() : initialValue;
+        return val;
     }
     try {
         const item = window.localStorage.getItem(key);
@@ -20,10 +21,12 @@ export function useLocalStorage<T>(key: string, initialValue: T | (() => T)) {
   const [storedValue, setStoredValue] = useState<T>(() => getValue(key, initialValue));
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(key, JSON.stringify(storedValue));
-    } catch (error) {
-      console.warn(`Error setting localStorage key “${key}”:`, error);
+    if(typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(key, JSON.stringify(storedValue));
+      } catch (error) {
+        console.warn(`Error setting localStorage key “${key}”:`, error);
+      }
     }
   }, [key, storedValue]);
 

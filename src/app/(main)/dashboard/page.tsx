@@ -23,15 +23,16 @@ import {
   DollarSign,
   Landmark,
 } from "lucide-react";
-import { sampleTransactions, sampleDebts } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
-import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useUser } from "@/firebase/auth/use-user";
+import { useCollection, useDoc } from "@/firebase/firestore/hooks";
 import type { Transaction, Debt } from "@/lib/types";
 
 export default function DashboardPage() {
-  const [transactions] = useLocalStorage<Transaction[]>("transactions", sampleTransactions);
-  const [debts] = useLocalStorage<Debt[]>("debts", sampleDebts);
-  
+  const { user } = useUser();
+  const { data: transactions = [] } = useCollection<Transaction>(user ? `users/${user.uid}/transactions` : null);
+  const { data: debts = [] } = useCollection<Debt>(user ? `users/${user.uid}/debts` : null);
+
   const totalIncome = 5000;
   const totalSpending = transactions.reduce((sum, t) => sum + t.amount, 0);
   const totalDebt = debts.reduce((sum, d) => sum + d.amount, 0);
@@ -113,7 +114,7 @@ export default function DashboardPage() {
                   <TableRow key={transaction.id}>
                     <TableCell>
                       <div className="font-medium">{transaction.name}</div>
-                      <div className="text-sm text-muted-foreground">{transaction.date}</div>
+                      <div className="text-sm text-muted-foreground">{new Date(transaction.date).toLocaleDateString()}</div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{transaction.category}</Badge>

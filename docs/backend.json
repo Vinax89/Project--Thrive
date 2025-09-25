@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -21,6 +22,40 @@
         }
       },
       "required": ["displayName", "email"]
+    },
+    "Debt": {
+      "title": "Debt",
+      "description": "Represents a single debt item for a user.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the debt." },
+        "amount": { "type": "number", "description": "The outstanding amount." },
+        "type": { "type": "string", "enum": ["Credit Card", "Loan", "BNPL"] }
+      },
+      "required": ["name", "amount", "type"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Represents a single financial transaction.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name or description of the transaction." },
+        "amount": { "type": "number", "description": "The transaction amount." },
+        "date": { "type": "string", "format": "date-time", "description": "The date of the transaction." },
+        "category": { "type": "string", "description": "The category of the transaction." }
+      },
+      "required": ["name", "amount", "date", "category"]
+    },
+    "BudgetCategory": {
+        "title": "Budget Category",
+        "description": "Represents a category in the user's budget.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string", "description": "The name of the budget category." },
+            "allocated": { "type": "number", "description": "The amount allocated to this category." },
+            "spent": { "type": "number", "description": "The amount spent in this category." }
+        },
+        "required": ["name", "allocated", "spent"]
     }
   },
   "auth": {
@@ -32,6 +67,24 @@
         "$ref": "#/entities/UserProfile"
       },
       "description": "Stores public information about a user."
-    }
+    },
+    "/users/{userId}/debts/{debtId}": {
+      "schema": {
+        "$ref": "#/entities/Debt"
+      },
+      "description": "Stores a user's individual debt items."
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": {
+        "$ref": "#/entities/Transaction"
+      },
+      "description": "Stores a user's financial transactions."
+    },
+    "/users/{userId}/budgetCategories/{categoryId}": {
+        "schema": {
+          "$ref": "#/entities/BudgetCategory"
+        },
+        "description": "Stores a user's budget categories."
+      }
   }
 }
