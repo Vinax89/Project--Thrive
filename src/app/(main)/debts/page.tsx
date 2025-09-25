@@ -19,7 +19,7 @@ import {
 import { DebtPieChart } from "@/components/debt-pie-chart";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/firebase/auth/use-user";
-import { useCollection, useDoc } from "@/firebase/firestore/hooks";
+import { useCollection } from "@/firebase/firestore/hooks";
 import type { Debt } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,7 +107,7 @@ export default function DebtsPage() {
             <CardHeader>
               <CardTitle>All Debts</CardTitle>
               <CardDescription>
-                A complete list of your financial obligations. Totaling ${totalDebt.toLocaleString()}.
+                A complete list of your financial obligations. Totaling ${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -138,7 +138,7 @@ export default function DebtsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        ${debt.amount.toLocaleString()}
+                        ${debt.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </TableCell>
                       <TableCell>
                         <Button variant="ghost" size="icon" onClick={() => debt.id && remove(debt.id)}>
@@ -156,4 +156,3 @@ export default function DebtsPage() {
     </div>
   );
 }
-

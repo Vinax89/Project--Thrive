@@ -52,6 +52,26 @@ export function DebtPieChart({ debts }: DebtPieChartProps) {
 
   const totalDebt = React.useMemo(() => debts.reduce((sum, debt) => sum + debt.amount, 0), [debts]);
 
+  if (debts.length === 0) {
+    return (
+        <Card className="flex flex-col">
+            <CardHeader>
+                <CardTitle>Debt Breakdown</CardTitle>
+                <CardDescription>No debt data to display.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pb-0">
+                <div className="flex h-[300px] w-full items-center justify-center rounded-md border border-dashed text-center">
+                    <p className="text-sm text-muted-foreground">Add a debt to see your breakdown.</p>
+                </div>
+            </CardContent>
+             <div className="flex flex-col items-center justify-center p-6 gap-2">
+                <span className="text-sm text-muted-foreground">Total Debt</span>
+                <span className="text-3xl font-bold font-headline">$0.00</span>
+            </div>
+        </Card>
+    );
+  }
+
   return (
     <Card className="flex flex-col">
        <CardHeader>
@@ -79,7 +99,7 @@ export function DebtPieChart({ debts }: DebtPieChartProps) {
                 <Cell key={`cell-${index}`} fill={entry.fill} />
               ))}
             </Pie>
-             <ChartLegend content={<ChartLegendContent />} />
+             <ChartLegend content={<ChartLegendContent nameKey="type" />} />
           </PieChart>
         </ChartContainer>
       </CardContent>
