@@ -24,6 +24,7 @@ import {
   Link2,
   Trophy,
   Percent,
+  Calculator,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -97,6 +98,11 @@ const menuItems = [
     href: "/viability",
     label: "Income Viability",
     icon: Banknote,
+  },
+  {
+    href: "/income-modeler",
+    label: "Income Modeler",
+    icon: Calculator,
   },
   {
     href: "/tax",
