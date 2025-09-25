@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -40,7 +39,7 @@ const prompt = ai.definePrompt({
 
   Analyze the user's income, debts, expenses, savings, and financial goals to identify areas where they could benefit from financial education.
 
-  Provide a list of specific financial education topics or resources that would be helpful for the user. Format the response as a markdown list.
+  Provide a list of specific financial education topics or resources that would be helpful for the user. Format the response as a markdown list with bolded titles.
 
   Income: {{{income}}}
   Debts: {{{debts}}}

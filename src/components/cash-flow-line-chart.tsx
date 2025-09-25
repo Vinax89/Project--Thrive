@@ -1,8 +1,7 @@
-
 "use client";
 
 import * as React from "react";
-import { Line, LineChart, XAxis, YAxis, Tooltip } from "recharts";
+import { Line, LineChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import {
   ChartContainer,
   ChartTooltipContent,
@@ -63,30 +62,33 @@ export function CashFlowLineChart({ transactions, income }: CashFlowLineChartPro
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[200px] w-full h-[300px]">
-      <LineChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 5 }}>
-        <XAxis
-          dataKey="month"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-        />
-        <YAxis />
-        <Tooltip cursor={false} content={<ChartTooltipContent />} />
-        <Line
-          dataKey="income"
-          type="monotone"
-          stroke="var(--color-income)"
-          strokeWidth={2}
-          dot={true}
-        />
-        <Line
-          dataKey="expenses"
-          type="monotone"
-          stroke="var(--color-expenses)"
-          strokeWidth={2}
-          dot={true}
-        />
-      </LineChart>
+      <ResponsiveContainer>
+        <LineChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+            <XAxis
+            dataKey="month"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            />
+            <YAxis tickLine={false} axisLine={false} tickMargin={10}/>
+            <Tooltip cursor={false} content={<ChartTooltipContent />} />
+            <Legend />
+            <Line
+            dataKey="income"
+            type="monotone"
+            stroke="var(--color-income)"
+            strokeWidth={2}
+            dot={true}
+            />
+            <Line
+            dataKey="expenses"
+            type="monotone"
+            stroke="var(--color-expenses)"
+            strokeWidth={2}
+            dot={true}
+            />
+        </LineChart>
+      </ResponsiveContainer>
     </ChartContainer>
   );
 }

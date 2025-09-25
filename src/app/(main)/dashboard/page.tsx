@@ -1,5 +1,6 @@
 "use client";
-
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import {
   Card,
   CardContent,
@@ -21,25 +22,68 @@ import {
   ArrowUpRight,
   DollarSign,
   Landmark,
+  Sparkles,
+  Terminal,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/firebase/auth/use-user";
-import { useCollection } from "@/firebase/firestore/use-collection";
-import { useDoc } from "@/firebase/firestore/use-doc";
+import { useCollection } from "@/firebase/firestore/hooks";
+import { useDoc } from "@/firebase/firestore/hooks";
 import type { Transaction, Debt, UserProfile } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { getCashFlowAdviceAction, FormState } from "./actions";
+import { useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { collection, doc } from "firebase/firestore";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending} className="w-full">
+      {pending ? "Analyzing..." : "Get AI Advice"}
+      <Sparkles className="ml-2 h-4 w-4" />
+    </Button>
+  );
+}
 
 export default function DashboardPage() {
   const { user } = useUser();
-  const { data: profile } = useDoc<UserProfile>(user ? `users/${user.uid}` : 'users/dummy');
-  const { data: transactions = [] } = useCollection<Transaction>(user ? `users/${user.uid}/transactions` : 'users/dummy/transactions');
-  const { data: debts = [] } = useCollection<Debt>(user ? `users/${user.uid}/debts` : 'users/dummy/debts');
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(
+    () => (user && firestore ? doc(firestore, `users/${user.uid}`) : null),
+    [user, firestore]
+  );
+  const { data: profile } = useDoc<UserProfile>(userDocRef);
+  
+  const transactionsColRef = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, `users/${user.uid}/transactions`) : null),
+    [user, firestore]
+  );
+  const { data: transactions = [] } = useCollection<Transaction>(transactionsColRef);
+
+  const debtsColRef = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, `users/${user.uid}/debts`) : null),
+    [user, firestore]
+  );
+  const { data: debts = [] } = useCollection<Debt>(debtsColRef);
+
 
   const totalIncome = (profile as any)?.income || 0;
   const totalSpending = transactions.reduce((sum, t) => sum + t.amount, 0);
   const totalDebt = debts.reduce((sum, d) => sum + d.amount, 0);
   const savingsGoal = (profile as any)?.savingsGoal || 0;
   const currentSavings = (profile as any)?.savings || 0;
-  const savingsProgress = savingsGoal > 0 ? (currentSavings / savingsGoal) * 100 : 0;
+  const savingsProgress =
+    savingsGoal > 0 ? (currentSavings / savingsGoal) * 100 : 0;
+
+  const initialState: FormState = { message: "" };
+  const [state, formAction] = useActionState(getCashFlowAdviceAction, initialState);
+
+  const spendingHabitsSummary = transactions
+  .slice(0, 10) // Limit to recent transactions for brevity
+  .map(t => `${t.category}: $${t.amount.toFixed(2)} on ${new Date(t.date).toLocaleDateString()}`)
+  .join(', ');
 
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
@@ -57,17 +101,23 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalIncome.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              ${totalIncome.toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground">Your monthly income</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spending</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Spending
+            </CardTitle>
             <ArrowDownLeft className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalSpending.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              ${totalSpending.toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
@@ -89,51 +139,59 @@ export default function DashboardPage() {
             <Landmark className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalDebt.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Across all accounts</p>
+            <div className="text-2xl font-bold">
+              ${totalDebt.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Across all accounts
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Recent Transactions</CardTitle>
-            <CardDescription>Your latest spending activity.</CardDescription>
+            <CardTitle>AI Cash Flow Advisor</CardTitle>
+            <CardDescription>
+              Get personalized insights and suggestions from our AI.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Transaction</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.slice(0, 5).map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell>
-                      <div className="font-medium">{transaction.name}</div>
-                      <div className="text-sm text-muted-foreground">{new Date(transaction.date).toLocaleDateString()}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{transaction.category}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      -${transaction.amount.toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            {state.insights || state.suggestions ? (
+              <Alert>
+                <Terminal className="h-4 w-4" />
+                <AlertTitle>AI Insights</AlertTitle>
+                <AlertDescription className="mt-2 space-y-2">
+                  <p><strong>Insights:</strong> {state.insights}</p>
+                  <p><strong>Suggestions:</strong> {state.suggestions}</p>
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="flex h-[150px] items-center justify-center rounded-md border border-dashed text-center">
+                <p className="text-sm text-muted-foreground">
+                  {state.message || "Click the button to get your financial advice."}
+                </p>
+              </div>
+            )}
+          </CardContent>
+          <CardContent>
+            <form action={formAction}>
+              <input type="hidden" name="income" value={totalIncome} />
+              <input type="hidden" name="expenses" value={totalSpending} />
+              <input type="hidden" name="debts" value={totalDebt} />
+              <input type="hidden" name="savings" value={currentSavings} />
+              <input type="hidden" name="spendingHabits" value={spendingHabitsSummary} />
+              <SubmitButton />
+            </form>
           </CardContent>
         </Card>
-        <Card>
+         <Card>
           <CardHeader>
             <CardTitle>Savings Goal</CardTitle>
             <CardDescription>
-              Your progress towards your ${savingsGoal > 0 ? savingsGoal.toLocaleString() : 'goal'}.
+              Your progress towards your $
+              {savingsGoal > 0 ? savingsGoal.toLocaleString() : "goal"}.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
@@ -141,15 +199,56 @@ export default function DashboardPage() {
               <Progress value={savingsProgress} />
               <div className="flex justify-between text-sm font-medium">
                 <span>${currentSavings.toLocaleString()}</span>
-                <span className="text-muted-foreground">{savingsProgress.toFixed(0)}%</span>
+                <span className="text-muted-foreground">
+                  {savingsProgress.toFixed(0)}%
+                </span>
               </div>
             </div>
             <div className="text-sm text-muted-foreground">
-                {savingsGoal > 0 ? "You're on track! Keep going, you've got this." : "Set a savings goal in your profile to track your progress."}
+              {savingsGoal > 0
+                ? "You're on track! Keep going, you've got this."
+                : "Set a savings goal in your profile to track your progress."}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Transactions</CardTitle>
+          <CardDescription>Your latest spending activity.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Transaction</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transactions.slice(0, 5).map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell>
+                    <div className="font-medium">{transaction.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(transaction.date).toLocaleDateString()}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{transaction.category}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    -${transaction.amount.toFixed(2)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }

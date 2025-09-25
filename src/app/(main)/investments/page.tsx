@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -21,18 +20,12 @@ import { useUser } from "@/firebase/auth/use-user";
 import { useCollection } from "@/firebase/firestore/hooks";
 import type { Investment } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { PlusCircle, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { PlusCircle, Trash2, ArrowUp, ArrowDown, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFirestore, useMemoFirebase } from "@/firebase/provider";
 import { collection } from "firebase/firestore";
+import { EditInvestmentDialog } from "@/components/edit-investment-dialog";
+
 
 export default function InvestmentsPage() {
   const { user } = useUser();
@@ -42,44 +35,35 @@ export default function InvestmentsPage() {
     () => (user && firestore ? collection(firestore, `users/${user.uid}/investments`) : null),
     [user, firestore]
   );
-  const { data: investments = [], add, remove } = useCollection<Investment>(investmentsColRef);
+  const { data: investments = [], add, remove, update } = useCollection<Investment>(investmentsColRef);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newInvestmentName, setNewInvestmentName] = useState("");
-  const [newInvestmentType, setNewInvestmentType] = useState("");
-  const [newInvestmentQuantity, setNewInvestmentQuantity] = useState("");
-  const [newInvestmentPurchasePrice, setNewInvestmentPurchasePrice] =
-    useState("");
-  const [newInvestmentCurrentPrice, setNewInvestmentCurrentPrice] =
-    useState("");
+  const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null);
+
 
   const totalPortfolioValue = investments.reduce(
     (sum, investment) => sum + investment.quantity * investment.currentPrice,
     0
   );
 
-  const handleAddInvestment = () => {
-    if (
-      newInvestmentName &&
-      newInvestmentType &&
-      newInvestmentQuantity &&
-      newInvestmentPurchasePrice &&
-      newInvestmentCurrentPrice
-    ) {
-      add({
-        name: newInvestmentName,
-        type: newInvestmentType,
-        quantity: parseFloat(newInvestmentQuantity),
-        purchasePrice: parseFloat(newInvestmentPurchasePrice),
-        currentPrice: parseFloat(newInvestmentCurrentPrice),
-      });
-      setNewInvestmentName("");
-      setNewInvestmentType("");
-      setNewInvestmentQuantity("");
-      setNewInvestmentPurchasePrice("");
-      setNewInvestmentCurrentPrice("");
-      setIsDialogOpen(false);
+  const handleAddClick = () => {
+    setSelectedInvestment(null);
+    setIsDialogOpen(true);
+  };
+  
+  const handleEditClick = (investment: Investment) => {
+    setSelectedInvestment(investment);
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = (data: Partial<Investment>) => {
+    if (selectedInvestment?.id) {
+      update(selectedInvestment.id, data);
+    } else {
+      add(data as Omit<Investment, "id">);
     }
+    setIsDialogOpen(false);
+    setSelectedInvestment(null);
   };
 
   return (
@@ -91,50 +75,10 @@ export default function InvestmentsPage() {
             Track your investment portfolio.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Investment
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Investment</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <Input
-                placeholder="Investment Name (e.g., Apple Inc.)"
-                value={newInvestmentName}
-                onChange={(e) => setNewInvestmentName(e.target.value)}
-              />
-              <Input
-                placeholder="Type (e.g., Stock, ETF)"
-                value={newInvestmentType}
-                onChange={(e) => setNewInvestmentType(e.target.value)}
-              />
-              <Input
-                type="number"
-                placeholder="Quantity"
-                value={newInvestmentQuantity}
-                onChange={(e) => setNewInvestmentQuantity(e.target.value)}
-              />
-              <Input
-                type="number"
-                placeholder="Purchase Price per Share"
-                value={newInvestmentPurchasePrice}
-                onChange={(e) => setNewInvestmentPurchasePrice(e.target.value)}
-              />
-              <Input
-                type="number"
-                placeholder="Current Price per Share"
-                value={newInvestmentCurrentPrice}
-                onChange={(e) => setNewInvestmentCurrentPrice(e.target.value)}
-              />
-              <Button onClick={handleAddInvestment}>Add Investment</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={handleAddClick}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Investment
+        </Button>
       </div>
       <Card>
         <CardHeader>
@@ -152,7 +96,7 @@ export default function InvestmentsPage() {
                 <TableHead className="text-right">Quantity</TableHead>
                 <TableHead className="text-right">Current Value</TableHead>
                 <TableHead className="text-right">Total Gain/Loss</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                <TableHead className="w-[100px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -167,14 +111,17 @@ export default function InvestmentsPage() {
                     <TableCell>{investment.type}</TableCell>
                     <TableCell className="text-right">{investment.quantity}</TableCell>
                     <TableCell className="text-right">${currentValue.toFixed(2)}</TableCell>
-                    <TableCell className={cn("text-right font-medium flex items-center justify-end", isGain ? "text-green-600" : "text-red-600")}>
-                      {isGain ? <ArrowUp className="h-4 w-4 mr-1" /> : <ArrowDown className="h-4 w-4 mr-1" />}
+                    <TableCell className={cn("text-right font-medium flex items-center justify-end gap-1", isGain ? "text-green-600" : "text-red-600")}>
+                      {isGain ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
                       ${Math.abs(gainLoss).toFixed(2)}
                     </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => investment.id && remove(investment.id)}>
-                          <Trash2 className="h-4 w-4 text-muted-foreground" />
-                      </Button>
+                     <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(investment)}>
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => investment.id && remove(investment.id)}>
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
                     </TableCell>
                   </TableRow>
                 );
@@ -183,6 +130,12 @@ export default function InvestmentsPage() {
           </Table>
         </CardContent>
       </Card>
+      <EditInvestmentDialog
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSave={handleSave}
+        investment={selectedInvestment}
+      />
     </div>
   );
 }

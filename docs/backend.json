@@ -10,7 +10,10 @@
         "displayName": { "type": "string", "description": "The user's display name." },
         "photoURL": { "type": "string", "description": "URL of the user's profile picture." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of when the profile was created." },
-        "lastLogin": { "type": "string", "format": "date-time", "description": "Timestamp of the user's last login." }
+        "lastLogin": { "type": "string", "format": "date-time", "description": "Timestamp of the user's last login." },
+        "income": { "type": "number", "description": "The user's monthly income." },
+        "savings": { "type": "number", "description": "The user's total savings." },
+        "savingsGoal": { "type": "number", "description": "The user's savings goal." }
       },
       "required": ["uid", "email"]
     },

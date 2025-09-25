@@ -18,54 +18,45 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/firebase/auth/use-user";
-import { useCollection } from "@/firebase/firestore/use-collection";
+import { useCollection } from "@/firebase/firestore/hooks";
 import type { Transaction } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { PlusCircle, Trash2 } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from 'date-fns';
-import { cn } from "@/lib/utils";
+import { PlusCircle, Trash2, Pencil } from "lucide-react";
+import { EditTransactionDialog } from "@/components/edit-transaction-dialog";
+import { useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { collection } from "firebase/firestore";
 
 export default function TransactionsPage() {
   const { user } = useUser();
-  const { data: transactions = [], add, remove } = useCollection<Transaction>(
-    user ? `users/${user.uid}/transactions` : 'users/dummy/transactions'
+  const firestore = useFirestore();
+
+  const transactionsColRef = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, `users/${user.uid}/transactions`) : null),
+    [user, firestore]
   );
+  const { data: transactions = [], add, remove, update } = useCollection<Transaction>(transactionsColRef);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newTransactionName, setNewTransactionName] = useState("");
-  const [newTransactionAmount, setNewTransactionAmount] = useState("");
-  const [newTransactionDate, setNewTransactionDate] = useState<Date | undefined>(new Date());
-  const [newTransactionCategory, setNewTransactionCategory] = useState("");
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
-  const handleAddTransaction = () => {
-    if (newTransactionName && newTransactionAmount && newTransactionDate && newTransactionCategory) {
-      add({
-        name: newTransactionName,
-        amount: parseFloat(newTransactionAmount),
-        date: newTransactionDate.toISOString(),
-        category: newTransactionCategory,
-      });
-      setNewTransactionName("");
-      setNewTransactionAmount("");
-      setNewTransactionDate(new Date());
-      setNewTransactionCategory("");
-      setIsDialogOpen(false);
+  const handleAddClick = () => {
+    setSelectedTransaction(null);
+    setIsDialogOpen(true);
+  };
+  
+  const handleEditClick = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = (data: Partial<Transaction>) => {
+    if (selectedTransaction?.id) {
+      update(selectedTransaction.id, data);
+    } else {
+      add(data as Omit<Transaction, "id">);
     }
+    setIsDialogOpen(false);
+    setSelectedTransaction(null);
   };
 
   return (
@@ -77,60 +68,10 @@ export default function TransactionsPage() {
             A record of your income and expenses.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Transaction
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Transaction</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <Input
-                placeholder="Transaction Name"
-                value={newTransactionName}
-                onChange={(e) => setNewTransactionName(e.target.value)}
-              />
-              <Input
-                type="number"
-                placeholder="Amount"
-                value={newTransactionAmount}
-                onChange={(e) => setNewTransactionAmount(e.target.value)}
-              />
-              <Input
-                placeholder="Category"
-                value={newTransactionCategory}
-                onChange={(e) => setNewTransactionCategory(e.target.value)}
-              />
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={'outline'}
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !newTransactionDate && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {newTransactionDate ? format(newTransactionDate, 'PPP') : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={newTransactionDate}
-                    onSelect={setNewTransactionDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <Button onClick={handleAddTransaction}>Add Transaction</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={handleAddClick}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Transaction
+        </Button>
       </div>
       <Card>
         <CardHeader>
@@ -145,31 +86,50 @@ export default function TransactionsPage() {
                 <TableHead>Category</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                <TableHead className="w-[100px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">{transaction.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{transaction.category}</Badge>
-                  </TableCell>
-                  <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    ${transaction.amount.toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => transaction.id && remove(transaction.id)}>
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {transactions
+                .sort(
+                  (a, b) =>
+                    new Date(b.date).getTime() - new Date(a.date).getTime()
+                )
+                .map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell className="font-medium">
+                      {transaction.name}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{transaction.category}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(transaction.date).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      ${transaction.amount.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(transaction)}>
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => transaction.id && remove(transaction.id)}>
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+      
+      <EditTransactionDialog
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSave={handleSave}
+        transaction={selectedTransaction}
+      />
     </div>
   );
 }

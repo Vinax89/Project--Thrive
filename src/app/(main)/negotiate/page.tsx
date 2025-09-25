@@ -1,4 +1,3 @@
-
 import { BillNegotiationForm } from "@/components/bill-negotiation-form";
 
 export default function NegotiatePage() {

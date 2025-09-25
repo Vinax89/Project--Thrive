@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -24,7 +23,7 @@ import { Label } from '@/components/ui/label';
 interface EditDebtDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (data: Omit<Debt, 'id'> | Partial<Debt>) => void;
+  onSave: (data: Partial<Debt>) => void;
   debt?: Debt | null;
   trigger?: React.ReactNode;
 }
@@ -57,7 +56,7 @@ export function EditDebtDialog({
 
   const handleSave = () => {
     if (name && amount && type) {
-      const data = {
+      const data: Partial<Debt> = {
         name,
         amount: parseFloat(amount),
         type: type as Debt['type'],

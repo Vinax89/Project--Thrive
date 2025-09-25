@@ -1,8 +1,7 @@
-
 "use client";
 
 import * as React from "react";
-import { Bar, BarChart, XAxis, YAxis, Tooltip } from "recharts";
+import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import {
   ChartContainer,
   ChartTooltipContent,
@@ -56,24 +55,25 @@ export function SpendingBarChart({ transactions }: SpendingBarChartProps) {
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[200px] w-full h-[300px]">
-      <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 5 }}>
-        <XAxis
-          dataKey="category"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-          angle={-45}
-          textAnchor="end"
-          height={60}
-          interval={0}
-        />
-        <YAxis />
-        <Tooltip
-          cursor={false}
-          content={<ChartTooltipContent indicator="dot" />}
-        />
-        <Bar dataKey="amount" fill="var(--color-amount)" radius={4} />
-      </BarChart>
+      <ResponsiveContainer>
+        <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 40 }}>
+            <XAxis
+            dataKey="category"
+            tickLine={false}
+            tickMargin={10}
+            axisLine={false}
+            angle={-45}
+            textAnchor="end"
+            interval={0}
+            />
+            <YAxis tickLine={false} axisLine={false} tickMargin={10} />
+            <Tooltip
+            cursor={false}
+            content={<ChartTooltipContent indicator="dot" />}
+            />
+            <Bar dataKey="amount" fill="var(--color-amount)" radius={4} />
+        </BarChart>
+      </ResponsiveContainer>
     </ChartContainer>
   );
 }

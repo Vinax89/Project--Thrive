@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,7 +26,7 @@ import { Label } from '@/components/ui/label';
 interface EditTransactionDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (data: Omit<Transaction, 'id'> | Partial<Transaction>) => void;
+  onSave: (data: Partial<Transaction>) => void;
   transaction?: Transaction | null;
   trigger?: React.ReactNode;
 }
@@ -63,7 +62,7 @@ export function EditTransactionDialog({
 
   const handleSave = () => {
     if (name && amount && date && category) {
-      const data = {
+      const data: Partial<Transaction> = {
         name,
         amount: parseFloat(amount),
         date: date.toISOString(),
@@ -144,4 +143,3 @@ export function EditTransactionDialog({
     </Dialog>
   );
 }
-

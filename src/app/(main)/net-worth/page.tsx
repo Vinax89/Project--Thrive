@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser } from '@/firebase/auth/use-user';
@@ -13,8 +12,9 @@ import {
 } from '@/components/ui/card';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
 import { collection, doc } from 'firebase/firestore';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
-import { ArrowDown, ArrowUp, Banknote, Landmark, Scale } from 'lucide-react';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { ChartTooltipContent } from "@/components/ui/chart";
+import { ArrowDown, ArrowUp, Banknote, Landmark, Scale, TrendingUp } from 'lucide-react';
 
 export default function NetWorthPage() {
   const { user, loading: userLoading } = useUser();
@@ -41,7 +41,7 @@ export default function NetWorthPage() {
 
   const loading = userLoading || profileLoading || investmentsLoading || debtsLoading;
 
-  const totalSavings = profile?.savings || 0;
+  const totalSavings = (profile as any)?.savings || 0;
   const totalInvestmentValue = investments.reduce(
     (sum, investment) => sum + investment.quantity * investment.currentPrice,
     0
@@ -54,7 +54,7 @@ export default function NetWorthPage() {
     {
       name: 'Financials',
       assets: totalAssets,
-      liabilities: totalLiabilities,
+      liabilities: totalLiabilities * -1, // Make liabilities negative for stacking
     },
   ];
 
@@ -112,40 +112,41 @@ export default function NetWorthPage() {
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} layout="vertical" margin={{ left: 10 }}>
+               <BarChart data={chartData} layout="vertical" barGap={-15} barSize={30}>
                 <XAxis type="number" hide />
                 <YAxis type="category" dataKey="name" hide />
-                <Bar dataKey="assets" stackId="a" fill="hsl(var(--chart-2))" radius={[4, 4, 4, 4]} />
-                <Bar dataKey="liabilities" stackId="a" fill="hsl(var(--chart-5))" radius={[4, 4, 4, 4]} />
+                <Tooltip cursor={{fill: 'transparent'}} content={<ChartTooltipContent />} />
+                <Bar dataKey="assets" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="liabilities" fill="hsl(var(--chart-5))" radius={[4, 0, 0, 4]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
          <div className="lg:col-span-2 space-y-6">
             <Card>
-                <CardHeader className="flex flex-row items-center space-x-4">
+                <CardHeader className="flex flex-row items-center space-x-4 p-4">
                     <Banknote className="h-8 w-8 text-muted-foreground" />
                     <div>
-                        <CardTitle>Savings</CardTitle>
-                        <CardDescription>${totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</CardDescription>
+                        <p className="text-sm text-muted-foreground">Savings</p>
+                        <p className="text-lg font-semibold">${totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                 </CardHeader>
             </Card>
              <Card>
-                <CardHeader className="flex flex-row items-center space-x-4">
+                <CardHeader className="flex flex-row items-center space-x-4 p-4">
                     <TrendingUp className="h-8 w-8 text-muted-foreground" />
                     <div>
-                        <CardTitle>Investments</CardTitle>
-                        <CardDescription>${totalInvestmentValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</CardDescription>
+                        <p className="text-sm text-muted-foreground">Investments</p>
+                        <p className="text-lg font-semibold">${totalInvestmentValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                 </CardHeader>
             </Card>
              <Card>
-                <CardHeader className="flex flex-row items-center space-x-4">
+                <CardHeader className="flex flex-row items-center space-x-4 p-4">
                     <Landmark className="h-8 w-8 text-muted-foreground" />
                     <div>
-                        <CardTitle>Debts</CardTitle>
-                        <CardDescription>${totalLiabilities.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</CardDescription>
+                        <p className="text-sm text-muted-foreground">Debts</p>
+                        <p className="text-lg font-semibold">${totalLiabilities.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                 </CardHeader>
             </Card>

@@ -9,7 +9,7 @@ import {
   signInWithPopup,
   UserCredential,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CircleDollarSign } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { sampleBudgetCategories, sampleDebts, sampleTransactions } from '@/lib/data';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -42,6 +43,8 @@ export default function LoginPage() {
   const createUserProfile = async (userCredential: UserCredential) => {
     if (!firestore) return;
     const user = userCredential.user;
+    const isNewUser = userCredential.metadata.creationTime === userCredential.metadata.lastSignInTime;
+
     const userRef = doc(firestore, 'users', user.uid);
     const userData = {
       uid: user.uid,
@@ -51,14 +54,43 @@ export default function LoginPage() {
       createdAt: serverTimestamp(),
       lastLogin: serverTimestamp(),
     };
-    setDoc(userRef, userData, { merge: true }).catch((serverError) => {
-      const permissionError = new FirestorePermissionError({
-        path: userRef.path,
-        operation: 'create',
-        requestResourceData: userData,
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    });
+    
+    try {
+        if (isNewUser) {
+            const batch = writeBatch(firestore);
+            
+            // Set user profile
+            batch.set(userRef, userData, { merge: true });
+
+            // Seed sample data
+            const transactionsRef = doc(firestore, `users/${user.uid}/transactions/sample`);
+            sampleTransactions.forEach(t => {
+                const newTransactionRef = doc(doc(firestore, 'users', user.uid), 'transactions');
+                batch.set(newTransactionRef, t);
+            });
+            sampleDebts.forEach(d => {
+                const newDebtRef = doc(doc(firestore, 'users', user.uid), 'debts');
+                batch.set(newDebtRef, d);
+            });
+            sampleBudgetCategories.forEach(b => {
+                const newBudgetRef = doc(doc(firestore, 'users', user.uid), 'budgetCategories');
+                batch.set(newBudgetRef, b);
+            });
+
+            await batch.commit();
+
+        } else {
+             // For existing users, just update last login
+            await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
+        }
+    } catch (serverError) {
+        const permissionError = new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'write',
+            requestResourceData: userData,
+          });
+        errorEmitter.emit('permission-error', permissionError);
+    }
   };
 
 

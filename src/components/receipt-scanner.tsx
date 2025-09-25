@@ -1,12 +1,11 @@
-
 "use client";
 
-import { useActionState, useState, useRef } from "react";
+import { useActionState, useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useFormStatus } from "react-dom";
 import { processReceiptAction, type FormState } from "@/app/(main)/scan/actions";
 import { useUser } from "@/firebase/auth/use-user";
-import { useCollection } from "@/firebase/firestore/use-collection";
+import { useCollection } from "@/firebase/firestore/hooks";
 import type { Transaction } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal, Sparkles, UploadCloud, PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { collection } from "firebase/firestore";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -39,11 +40,24 @@ export function ReceiptScanner() {
   const [state, formAction] = useActionState(processReceiptAction, initialState);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageData, setImageData] = useState<string | null>(null);
+  const [category, setCategory] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
   const { user } = useUser();
-  const { add: addTransaction } = useCollection<Transaction>(user ? `users/${user.uid}/transactions` : 'users/dummy/transactions');
+  const firestore = useFirestore();
+
+  const transactionsColRef = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, `users/${user.uid}/transactions`) : null),
+    [user, firestore]
+  );
+  const { add: addTransaction } = useCollection<Transaction>(transactionsColRef);
+
+  useEffect(() => {
+    if (state.category) {
+      setCategory(state.category);
+    }
+  }, [state.category]);
 
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,7 +79,7 @@ export function ReceiptScanner() {
             name: state.vendor,
             amount: state.total,
             date: new Date(state.date).toISOString(),
-            category: 'Uncategorized', // Default category for now
+            category: category,
         });
         toast({
             title: "Transaction Added",
@@ -130,10 +144,14 @@ export function ReceiptScanner() {
             <Alert>
               <Terminal className="h-4 w-4" />
               <AlertTitle>Scan Results</AlertTitle>
-              <AlertDescription className="mt-2">
+              <AlertDescription className="mt-2 space-y-2">
                 <p><strong>Vendor:</strong> {state.vendor}</p>
                 <p><strong>Date:</strong> {state.date}</p>
                 <p><strong>Total:</strong> ${state.total?.toFixed(2)}</p>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="category" className="font-semibold">Category:</Label>
+                    <Input id="category" value={category} onChange={e => setCategory(e.target.value)} className="h-8"/>
+                </div>
               </AlertDescription>
             </Alert>
           ) : (

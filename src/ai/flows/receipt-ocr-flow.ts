@@ -25,6 +25,7 @@ const ReceiptOcrOutputSchema = z.object({
     .string()
     .describe('The date of the transaction in YYYY-MM-DD format.'),
   total: z.number().describe('The total amount of the transaction.'),
+  category: z.string().describe('A suggested category for the transaction based on the receipt content (e.g., Food, Groceries, Gas, Utilities, Shopping).'),
 });
 export type ReceiptOcrOutput = z.infer<typeof ReceiptOcrOutputSchema>;
 
@@ -38,7 +39,7 @@ const prompt = ai.definePrompt({
   name: 'receiptOcrPrompt',
   input: {schema: ReceiptOcrInputSchema},
   output: {schema: ReceiptOcrOutputSchema},
-  prompt: `You are an expert receipt processor. Extract the vendor name, transaction date (in YYYY-MM-DD format), and the final total amount from the following receipt image.
+  prompt: `You are an expert receipt processor. Extract the vendor name, transaction date (in YYYY-MM-DD format), the final total amount, and a suggested transaction category from the following receipt image. Analyze the vendor and items to determine the best category.
 
 Receipt: {{media url=receiptImage}}`,
 });

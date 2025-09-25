@@ -21,17 +21,17 @@ const chartConfig = {
   },
   'Credit Card': {
     label: "Credit Card",
-    color: "hsl(var(--chart-1))",
+    color: "hsl(var(--chart-5))",
   },
   'Loan': {
     label: "Loan",
-    color: "hsl(var(--chart-2))",
+    color: "hsl(var(--chart-4))",
   },
   'BNPL': {
     label: "BNPL",
-    color: "hsl(var(--chart-4))",
+    color: "hsl(var(--chart-3))",
   },
-};
+} satisfies import("@/components/ui/chart").ChartConfig;
 
 export function DebtPieChart({ debts }: DebtPieChartProps) {
   const chartData = React.useMemo(() => {
@@ -46,7 +46,7 @@ export function DebtPieChart({ debts }: DebtPieChartProps) {
     return Object.entries(debtByType).map(([type, amount]) => ({
       type,
       amount,
-      fill: chartConfig[type as keyof typeof chartConfig]?.color || "hsl(var(--chart-5))",
+      fill: (chartConfig as any)[type]?.color || "hsl(var(--chart-1))",
     }));
   }, [debts]);
 

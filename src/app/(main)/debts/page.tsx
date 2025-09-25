@@ -17,51 +17,48 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/firebase/auth/use-user";
-import { useCollection } from "@/firebase/firestore/use-collection";
+import { useCollection } from "@/firebase/firestore/hooks";
 import type { Debt } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Pencil } from "lucide-react";
+import { EditDebtDialog } from "@/components/edit-debt-dialog";
+import { useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { collection } from "firebase/firestore";
+import { DebtPieChart } from "@/components/debt-pie-chart";
 
 export default function DebtsPage() {
   const { user } = useUser();
-  const { data: debts = [], add, remove } = useCollection<Debt>(
-    user ? `users/${user.uid}/debts` : 'users/dummy/debts'
+  const firestore = useFirestore();
+
+  const debtsColRef = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, `users/${user.uid}/debts`) : null),
+    [user, firestore]
   );
+  const { data: debts = [], add, remove, update } = useCollection<Debt>(debtsColRef);
+  
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
 
   const totalDebt = debts.reduce((sum, debt) => sum + debt.amount, 0);
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newDebtName, setNewDebtName] = useState("");
-  const [newDebtAmount, setNewDebtAmount] = useState("");
-  const [newDebtType, setNewDebtType] = useState<Debt['type'] | ''>('');
+  const handleAddClick = () => {
+    setSelectedDebt(null);
+    setIsDialogOpen(true);
+  };
+  
+  const handleEditClick = (debt: Debt) => {
+    setSelectedDebt(debt);
+    setIsDialogOpen(true);
+  };
 
-  const handleAddDebt = () => {
-    if (newDebtName && newDebtAmount && newDebtType) {
-      add({
-        name: newDebtName,
-        amount: parseFloat(newDebtAmount),
-        type: newDebtType as Debt['type'],
-      });
-      setNewDebtName("");
-      setNewDebtAmount("");
-      setNewDebtType("");
-      setIsDialogOpen(false);
+  const handleSave = (data: Partial<Debt>) => {
+    if (selectedDebt?.id) {
+      update(selectedDebt.id, data);
+    } else {
+      add(data as Omit<Debt, "id">);
     }
+    setIsDialogOpen(false);
+    setSelectedDebt(null);
   };
 
   return (
@@ -73,92 +70,76 @@ export default function DebtsPage() {
             Manage your outstanding debts.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Debt
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Debt</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <Input
-                placeholder="Debt Name (e.g., Visa Card)"
-                value={newDebtName}
-                onChange={(e) => setNewDebtName(e.target.value)}
-              />
-              <Input
-                type="number"
-                placeholder="Amount"
-                value={newDebtAmount}
-                onChange={(e) => setNewDebtAmount(e.target.value)}
-              />
-              <Select onValueChange={(value) => setNewDebtType(value as Debt['type'])}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Credit Card">Credit Card</SelectItem>
-                  <SelectItem value="Loan">Loan</SelectItem>
-                  <SelectItem value="BNPL">BNPL</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={handleAddDebt}>Add Debt</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={handleAddClick}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Debt
+        </Button>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>All Debts</CardTitle>
-          <CardDescription>
-            A complete list of your financial obligations. Totaling ${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Debt Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {debts.map((debt) => (
-                <TableRow key={debt.id}>
-                  <TableCell className="font-medium">{debt.name}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        debt.type === "Credit Card"
-                          ? "destructive"
-                          : debt.type === "Loan"
-                          ? "secondary"
-                          : "outline"
-                      }
-                    >
-                      {debt.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    ${debt.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </TableCell>
-                  <TableCell>
-                     <Button variant="ghost" size="icon" onClick={() => debt.id && remove(debt.id)}>
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+            <Card>
+                <CardHeader>
+                <CardTitle>All Debts</CardTitle>
+                <CardDescription>
+                    A complete list of your financial obligations. Totaling ${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
+                </CardDescription>
+                </CardHeader>
+                <CardContent>
+                <Table>
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead>Debt Name</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead className="w-[100px] text-right">Actions</TableHead>
+                    </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {debts.map((debt) => (
+                        <TableRow key={debt.id}>
+                        <TableCell className="font-medium">{debt.name}</TableCell>
+                        <TableCell>
+                            <Badge
+                            variant={
+                                debt.type === "Credit Card"
+                                ? "destructive"
+                                : debt.type === "Loan"
+                                ? "secondary"
+                                : "outline"
+                            }
+                            >
+                            {debt.type}
+                            </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                            ${debt.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(debt)}>
+                                <Pencil className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => debt.id && remove(debt.id)}>
+                                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                        </TableCell>
+                        </TableRow>
+                    ))}
+                    </TableBody>
+                </Table>
+                </CardContent>
+            </Card>
+        </div>
+        <div className="lg:col-span-1">
+            <DebtPieChart debts={debts} />
+        </div>
+      </div>
+       <EditDebtDialog
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSave={handleSave}
+        debt={selectedDebt}
+      />
     </div>
   );
 }
