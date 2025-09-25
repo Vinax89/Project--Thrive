@@ -9,3 +9,4 @@ import './flows/ai-powered-financial-education.ts';
 import './flows/tax-optimizer-flow.ts';
 import './flows/income-modeling-flow.ts';
 import './flows/ai-cash-flow-advisor.ts';
+import './flows/envelope-budgeting.ts';
