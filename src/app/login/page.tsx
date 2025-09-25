@@ -26,14 +26,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 export default function LoginPage() {
   const auth = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [signUpEmail, setSignUpEmail] = useState('');
+  const [signUpPassword, setSignUpPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const handleEmailPasswordSignUp = async () => {
     if (!auth) return;
+    setError(null);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
@@ -42,8 +46,9 @@ export default function LoginPage() {
 
   const handleEmailPasswordSignIn = async () => {
     if (!auth) return;
+    setError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
@@ -52,6 +57,7 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     if (!auth) return;
+    setError(null);
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -63,7 +69,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <Tabs defaultValue="login" className="w-[400px]">
+      <Tabs defaultValue="login" className="w-[400px]" onValueChange={() => setError(null)}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Login</TabsTrigger>
           <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -83,8 +89,8 @@ export default function LoginPage() {
                   id="login-email"
                   type="email"
                   placeholder="m@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -92,8 +98,8 @@ export default function LoginPage() {
                 <Input
                   id="login-password"
                   type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
                 />
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
@@ -127,8 +133,8 @@ export default function LoginPage() {
                   id="signup-email"
                   type="email"
                   placeholder="m@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={signUpEmail}
+                  onChange={(e) => setSignUpEmail(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -136,8 +142,8 @@ export default function LoginPage() {
                 <Input
                   id="signup-password"
                   type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={signUpPassword}
+                  onChange={(e) => setSignUpPassword(e.target.value)}
                 />
               </div>
                {error && <p className="text-sm text-destructive">{error}</p>}
