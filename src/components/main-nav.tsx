@@ -21,7 +21,6 @@ import {
   Scale,
   Banknote,
   Bell,
-  Link2,
   Trophy,
   Percent,
   Calculator,
@@ -84,11 +83,6 @@ const menuItems = [
     href: "/achievements",
     label: "Achievements",
     icon: Trophy,
-  },
-  {
-    href: "/link",
-    label: "Link Bank Account",
-    icon: Link2,
   },
   {
     href: "/education",
