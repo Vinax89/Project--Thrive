@@ -32,7 +32,7 @@ export function UserNav() {
 
   const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
   const avatarImage = user?.photoURL || (userAvatar ? userAvatar.imageUrl : undefined);
-  const avatarFallback = user?.displayName ? user.displayName.charAt(0) : 'U';
+  const avatarFallback = user?.displayName ? user.displayName.charAt(0).toUpperCase() : 'U';
 
   return (
     <DropdownMenu>
@@ -40,13 +40,9 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
             {avatarImage && (
-                 <Image
+                 <AvatarImage
                  src={avatarImage}
                  alt={user?.displayName || "User Avatar"}
-                 width={40}
-                 height={40}
-                 data-ai-hint={userAvatar?.imageHint}
-                 className="aspect-square h-full w-full"
                />
             )}
             <AvatarFallback>{avatarFallback}</AvatarFallback>
