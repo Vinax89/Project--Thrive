@@ -64,6 +64,27 @@
             "currentPrice": { "type": "number", "description": "The current market price per unit." }
         },
         "required": ["name", "type", "quantity", "purchasePrice", "currentPrice"]
+    },
+    "Alert": {
+      "title": "Customizable Alert",
+      "description": "Represents a user-defined alert for financial events.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["low-balance", "upcoming-bill", "net-worth-change"],
+          "description": "The type of event that triggers the alert."
+        },
+        "threshold": {
+          "type": "number",
+          "description": "The value that triggers the alert (e.g., balance amount, days before bill)."
+        },
+        "isEnabled": {
+          "type": "boolean",
+          "description": "Whether the alert is currently active."
+        }
+      },
+      "required": ["type", "threshold", "isEnabled"]
     }
   },
   "auth": {
@@ -89,6 +110,10 @@
     "/users/{userId}/investments/{investmentId}": {
         "schema": { "$ref": "#/entities/Investment" },
         "description": "Sub-collection for a user's investments."
+    },
+    "/users/{userId}/alerts/{alertId}": {
+      "schema": { "$ref": "#/entities/Alert" },
+      "description": "Sub-collection for a user's customizable alerts."
     }
   }
 }

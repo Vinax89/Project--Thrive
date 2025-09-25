@@ -20,6 +20,7 @@ import {
   ScanLine,
   Scale,
   Banknote,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +69,11 @@ const menuItems = [
     href: "/negotiate",
     label: "Negotiate Bill",
     icon: FileSignature,
+  },
+   {
+    href: "/alerts",
+    label: "Alerts",
+    icon: Bell,
   },
   {
     href: "/education",

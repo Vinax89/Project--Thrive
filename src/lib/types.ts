@@ -43,3 +43,10 @@ export type UserProfile = {
     savings?: number;
     savingsGoal?: number;
 }
+
+export type Alert = {
+    id?: string;
+    type: 'low-balance' | 'upcoming-bill' | 'net-worth-change';
+    threshold: number;
+    isEnabled: boolean;
+};
