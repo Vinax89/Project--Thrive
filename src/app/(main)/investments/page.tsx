@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -15,31 +15,46 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useUser } from "@/firebase/auth/use-user";
-import { useCollection } from "@/firebase/firestore/hooks";
-import type { Investment } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, ArrowUp, ArrowDown, Pencil } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection } from "firebase/firestore";
-import { EditInvestmentDialog } from "@/components/edit-investment-dialog";
-
+} from '@/components/ui/table';
+import { useUser } from '@/firebase/auth/use-user';
+import { useCollection, useDoc } from '@/firebase/firestore/hooks';
+import type { Investment, UserProfile } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import { PlusCircle, Trash2, ArrowUp, ArrowDown, Pencil } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { collection, doc, arrayUnion } from 'firebase/firestore';
+import { EditInvestmentDialog } from '@/components/edit-investment-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function InvestmentsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
-  const investmentsColRef = useMemoFirebase(
-    () => (user && firestore ? collection(firestore, `users/${user.uid}/investments`) : null),
+  const userDocRef = useMemoFirebase(
+    () => (user && firestore ? doc(firestore, `users/${user.uid}`) : null),
     [user, firestore]
   );
-  const { data: investments = [], add, remove, update } = useCollection<Investment>(investmentsColRef);
+  const { data: profile, update: updateUser } = useDoc<UserProfile>(userDocRef);
+
+  const investmentsColRef = useMemoFirebase(
+    () =>
+      user && firestore
+        ? collection(firestore, `users/${user.uid}/investments`)
+        : null,
+    [user, firestore]
+  );
+  const {
+    data: investments = [],
+    add,
+    remove,
+    update,
+  } = useCollection<Investment>(investmentsColRef);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null);
-
+  const [selectedInvestment, setSelectedInvestment] =
+    useState<Investment | null>(null);
 
   const totalPortfolioValue = investments.reduce(
     (sum, investment) => sum + investment.quantity * investment.currentPrice,
@@ -50,18 +65,32 @@ export default function InvestmentsPage() {
     setSelectedInvestment(null);
     setIsDialogOpen(true);
   };
-  
+
   const handleEditClick = (investment: Investment) => {
     setSelectedInvestment(investment);
     setIsDialogOpen(true);
   };
 
-  const handleSave = (data: Partial<Investment>) => {
+  const handleSave = async (data: Partial<Investment>) => {
+    const isFirstInvestment = investments.length === 0;
+
     if (selectedInvestment?.id) {
-      update(selectedInvestment.id, data);
+      await update(selectedInvestment.id, data);
     } else {
-      add(data as Omit<Investment, "id">);
+      await add(data as Omit<Investment, 'id'>);
     }
+
+    if (isFirstInvestment && profile) {
+      const earnedBadges = (profile as any)?.earnedBadges || [];
+      if (!earnedBadges.includes('investment-initiate')) {
+        await updateUser({ earnedBadges: arrayUnion('investment-initiate') });
+        toast({
+          title: 'Achievement Unlocked!',
+          description: "You've earned the 'Investment Initiate' badge!",
+        });
+      }
+    }
+
     setIsDialogOpen(false);
     setSelectedInvestment(null);
   };
@@ -76,15 +105,20 @@ export default function InvestmentsPage() {
           </p>
         </div>
         <Button onClick={handleAddClick}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Investment
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Investment
         </Button>
       </div>
       <Card>
         <CardHeader>
           <CardTitle>Portfolio</CardTitle>
           <CardDescription>
-            Your total portfolio value is ${totalPortfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
+            Your total portfolio value is $
+            {totalPortfolioValue.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+            .
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -100,28 +134,53 @@ export default function InvestmentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {investments.map((investment) => {
-                const currentValue = investment.quantity * investment.currentPrice;
-                const purchaseValue = investment.quantity * investment.purchasePrice;
+              {investments.map(investment => {
+                const currentValue =
+                  investment.quantity * investment.currentPrice;
+                const purchaseValue =
+                  investment.quantity * investment.purchasePrice;
                 const gainLoss = currentValue - purchaseValue;
                 const isGain = gainLoss >= 0;
                 return (
                   <TableRow key={investment.id}>
-                    <TableCell className="font-medium">{investment.name}</TableCell>
+                    <TableCell className="font-medium">
+                      {investment.name}
+                    </TableCell>
                     <TableCell>{investment.type}</TableCell>
-                    <TableCell className="text-right">{investment.quantity}</TableCell>
-                    <TableCell className="text-right">${currentValue.toFixed(2)}</TableCell>
-                    <TableCell className={cn("text-right font-medium flex items-center justify-end gap-1", isGain ? "text-green-600" : "text-red-600")}>
-                      {isGain ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                    <TableCell className="text-right">
+                      {investment.quantity}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      ${currentValue.toFixed(2)}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        'text-right font-medium flex items-center justify-end gap-1',
+                        isGain ? 'text-green-600' : 'text-red-600'
+                      )}
+                    >
+                      {isGain ? (
+                        <ArrowUp className="h-4 w-4" />
+                      ) : (
+                        <ArrowDown className="h-4 w-4" />
+                      )}
                       ${Math.abs(gainLoss).toFixed(2)}
                     </TableCell>
-                     <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(investment)}>
-                            <Pencil className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => investment.id && remove(investment.id)}>
-                            <Trash2 className="h-4 w-4 text-muted-foreground" />
-                        </Button>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditClick(investment)}
+                      >
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => investment.id && remove(investment.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );

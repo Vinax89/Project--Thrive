@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
-import { doc } from 'firebase/firestore';
+import { doc, arrayUnion } from 'firebase/firestore';
 
 const profileFormSchema = z.object({
   displayName: z.string().min(2, {
@@ -48,7 +48,7 @@ export default function ProfilePage() {
     [user, firestore]
   );
   const { data: profile, update, loading } = useDoc<UserProfile>(userDocRef);
-  
+
   const { toast } = useToast();
 
   const form = useForm<ProfileFormValues>({
@@ -62,7 +62,9 @@ export default function ProfilePage() {
     mode: 'onBlur',
   });
 
-  const { formState: { isSubmitting, isDirty } } = form;
+  const {
+    formState: { isSubmitting, isDirty },
+  } = form;
 
   useEffect(() => {
     if (profile) {
@@ -83,7 +85,20 @@ export default function ProfilePage() {
         title: 'Profile updated!',
         description: 'Your changes have been saved successfully.',
       });
-      // Reset the form with the new data, which also resets the `isDirty` state
+
+      // Check for savings goal achievement
+      const hadSavingsGoal = (profile as any)?.savingsGoal > 0;
+      if (data.savingsGoal && data.savingsGoal > 0 && !hadSavingsGoal) {
+        const earnedBadges = (profile as any)?.earnedBadges || [];
+        if (!earnedBadges.includes('savings-starter')) {
+          await update({ earnedBadges: arrayUnion('savings-starter') });
+          toast({
+            title: 'Achievement Unlocked!',
+            description: "You've earned the 'Savings Starter' badge!",
+          });
+        }
+      }
+
       form.reset(data);
     } catch (error) {
       toast({
@@ -139,20 +154,20 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                 <FormField
-                    control={form.control}
-                    name="income"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Monthly Income ($)</FormLabel>
-                        <FormControl>
-                            <Input type="number" placeholder="5000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="income"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Monthly Income ($)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="5000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="savings"
@@ -162,11 +177,11 @@ export default function ProfilePage() {
                       <FormControl>
                         <Input type="number" placeholder="10000" {...field} />
                       </FormControl>
-                       <FormMessage />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
-                 <FormField
+                <FormField
                   control={form.control}
                   name="savingsGoal"
                   render={({ field }) => (
@@ -175,14 +190,14 @@ export default function ProfilePage() {
                       <FormControl>
                         <Input type="number" placeholder="25000" {...field} />
                       </FormControl>
-                       <FormMessage />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
-               </div>
+              </div>
 
               <Button type="submit" disabled={isSubmitting || !isDirty}>
-                {isSubmitting ? "Saving..." : "Save Changes"}
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
               </Button>
             </form>
           </Form>
