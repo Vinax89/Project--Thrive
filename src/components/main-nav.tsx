@@ -17,9 +17,7 @@ import {
   BookOpen,
   Receipt,
   User,
-  ScanLine,
-  TrendingUp,
-  Scale,
+  ScanLine
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +32,7 @@ const menuItems = [
     label: "Transactions",
     icon: Receipt,
   },
-  {
+    {
     href: "/scan",
     label: "Scan Receipt",
     icon: ScanLine,
@@ -48,16 +46,6 @@ const menuItems = [
     href: "/debts",
     label: "Debts",
     icon: CreditCard,
-  },
-  {
-    href: "/investments",
-    label: "Investments",
-    icon: TrendingUp,
-  },
-  {
-    href: "/net-worth",
-    label: "Net Worth",
-    icon: Scale,
   },
   {
     href: "/reports",

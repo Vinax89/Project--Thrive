@@ -39,9 +39,6 @@ export type UserProfile = {
     email: string;
     displayName?: string;
     photoURL?: string;
-    income?: number;
-    savings?: number;
-    savingsGoal?: number;
     createdAt?: any;
     lastLogin?: any;
 }

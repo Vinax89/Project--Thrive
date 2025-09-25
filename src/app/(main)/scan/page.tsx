@@ -1,6 +1,5 @@
 
 import { ReceiptScanner } from "@/components/receipt-scanner";
-import { useFirestore } from "@/firebase/provider";
 
 export default function ScanPage() {
   return (

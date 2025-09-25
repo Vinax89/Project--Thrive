@@ -27,18 +27,6 @@
         "lastName": {
           "type": "string",
           "description": "The user's last name."
-        },
-        "income": {
-            "type": "number",
-            "description": "The user's monthly income."
-        },
-        "savings": {
-            "type": "number",
-            "description": "The user's current savings."
-        },
-        "savingsGoal": {
-            "type": "number",
-            "description": "The user's savings goal."
         }
       },
       "required": [
@@ -267,42 +255,6 @@
         "date",
         "category"
       ]
-    },
-     "NetWorth": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "NetWorth",
-      "type": "object",
-      "description": "Represents the user's net worth at a point in time.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the NetWorth record."
-        },
-        "date": {
-          "type": "string",
-          "description": "The date the net worth was calculated.",
-          "format": "date-time"
-        },
-        "totalAssets": {
-          "type": "number",
-          "description": "The total value of all assets."
-        },
-        "totalLiabilities": {
-          "type": "number",
-          "description": "The total value of all liabilities."
-        },
-        "netWorth": {
-          "type": "number",
-          "description": "The calculated net worth (Assets - Liabilities)."
-        }
-      },
-      "required": [
-        "id",
-        "date",
-        "totalAssets",
-        "totalLiabilities",
-        "netWorth"
-      ]
     }
   },
   "auth": {
@@ -363,6 +315,3 @@
     }
   }
 }
-
-
-    

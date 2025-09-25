@@ -10,7 +10,7 @@ import {
   signInWithPopup,
   UserCredential,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, collection, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CircleDollarSign } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { sampleTransactions, sampleDebts, sampleBudgetCategories, sampleInvestments } from '@/lib/data';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -41,47 +40,7 @@ export default function LoginPage() {
   const [signUpPassword, setSignUpPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const seedInitialData = async (userId: string) => {
-    if (!firestore) return;
-    const batch = writeBatch(firestore);
-
-    // Seed Transactions
-    const transactionsCol = collection(firestore, `users/${userId}/transactions`);
-    sampleTransactions.forEach(transaction => {
-        const docRef = doc(transactionsCol);
-        batch.set(docRef, transaction);
-    });
-
-    // Seed Debts
-    const debtsCol = collection(firestore, `users/${userId}/debts`);
-    sampleDebts.forEach(debt => {
-        const docRef = doc(debtsCol);
-        batch.set(docRef, debt);
-    });
-
-    // Seed Budget Categories
-    const budgetCategoriesCol = collection(firestore, `users/${userId}/budgetCategories`);
-    sampleBudgetCategories.forEach(category => {
-        const docRef = doc(budgetCategoriesCol);
-        batch.set(docRef, category);
-    });
-
-    // Seed Investments
-    const investmentsCol = collection(firestore, `users/${userId}/investments`);
-    sampleInvestments.forEach(investment => {
-        const docRef = doc(investmentsCol);
-        batch.set(docRef, investment);
-    });
-
-
-    try {
-        await batch.commit();
-    } catch(e) {
-        console.error("Error seeding initial data:", e);
-    }
-};
-
-  const createUserProfile = async (userCredential: UserCredential, isNewUser: boolean) => {
+  const createUserProfile = async (userCredential: UserCredential) => {
     if (!firestore) return;
     const user = userCredential.user;
     const userRef = doc(firestore, 'users', user.uid);
@@ -92,16 +51,7 @@ export default function LoginPage() {
       photoURL: user.photoURL,
       createdAt: serverTimestamp(),
       lastLogin: serverTimestamp(),
-      income: 5000,
-      savings: 10000,
-      savingsGoal: 25000,
     };
-    
-    // Only seed data if it's a new user
-     if (isNewUser) {
-        await seedInitialData(user.uid);
-    }
-
     setDoc(userRef, userData, { merge: true }).catch((serverError) => {
       const permissionError = new FirestorePermissionError({
         path: userRef.path,
@@ -118,7 +68,7 @@ export default function LoginPage() {
     setError(null);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
-      await createUserProfile(userCredential, true);
+      await createUserProfile(userCredential);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
@@ -154,10 +104,7 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      // Check if the user is new by checking creation time and last sign-in time
-      const metadata = result.user.metadata;
-      const isNewUser = metadata.creationTime === metadata.lastSignInTime;
-      await createUserProfile(result, isNewUser);
+      await createUserProfile(result);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
@@ -276,5 +223,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
