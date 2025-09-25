@@ -2,218 +2,182 @@
  * @fileoverview Firestore Security Rules for ChatPay application.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for all data. Each user has complete control over their own data tree,
- * and no user can access another user's data.
+ * This ruleset enforces a strict user-ownership model for all data. Each user can only access their own profile and associated data (debts, transactions, obligations, budgets, budget items, budget categories, and investments).
  *
  * Data Structure:
- * All data is nested under /users/{userId}. This includes user profiles, debts, obligations, budgets, budget items, and investments.
+ * All data is nested under /users/{userId}, ensuring clear ownership and preventing cross-user data access.
  *
  * Key Security Decisions:
- * - Users can only access data under their own user ID.
- * - Listing of user documents is disallowed to protect user privacy.
- * - Data validation is relaxed to allow for rapid prototyping, focusing only on relational integrity and authorization.
+ * - Users can only list their own data.
+ * - Write access is restricted to the owner of the data, based on the authenticated user's ID.
  *
  * Denormalization for Authorization:
- * The Firestore structure itself denormalizes ownership by nesting all user-specific data under the /users/{userId} path.
- * This avoids the need for `get()` calls to determine ownership.
+ *  - The userId is explicitly part of the Firestore path.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the user is signed in.
+     * @description Enforces that the user is signed in.
+     * @return {boolean} True if the user is signed in.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * @description Checks if the authenticated user's UID matches the provided userId.
+     * @description Checks if the request is made by the owner of the user profile based on the `userId` in the path.
+     * @param {string} userId The user ID from the Firestore path.
+     * @return {boolean} True if the request is made by the owner.
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
     /**
-     * @description Checks if the authenticated user is the owner of an existing document.
+     * @description Checks if the request is made by the existing owner of the document.
+     * @param {string} userId The user ID from the Firestore path.
+     * @return {boolean} True if the request is made by the existing owner.
      */
     function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+      return isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Enforces that the incoming document ID matches the user ID (for /users/{userId} document creation).
-     */
-    function isCreatingOwnedResource(userId) {
-        return request.resource.data.id == userId && isOwner(userId);
-    }
-
-    /**
-     * @description Enforces that a key authorization field is immutable on update.
-     */
-    function isImmutable(field) {
-        return request.resource.data[field] == resource.data[field];
-    }
-
-    /**
-     * @description Rules for the /users/{userId} document.
+     * @description Rules for the /users/{userId} collection.
      * @path /users/{userId}
-     * @allow (create) User with UID 'user123' can create their own profile.
-     * @deny (create) User with UID 'user123' cannot create a profile for another user ('user456').
-     * @allow (get) User with UID 'user123' can get their own profile.
-     * @deny (get) User with UID 'user123' cannot get the profile of another user ('user456').
-     * @deny (list) No one can list all user profiles.
-     * @allow (update) User with UID 'user123' can update their own profile.
-     * @deny (update) User with UID 'user123' cannot update the profile of another user ('user456').
-     * @allow (delete) User with UID 'user123' can delete their own profile.
-     * @deny (delete) User with UID 'user123' cannot delete the profile of another user ('user456').
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create) - User with matching {userId} can create their own profile.
+     * @allow (get, update, delete) - User with matching {userId} can get, update, and delete their own profile.
+     * @deny (create) - User attempts to create another user's profile.
+     * @deny (get, update, delete) - User attempts to get, update, or delete another user's profile.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isCreatingOwnedResource(userId);
-      allow update: if isExistingOwner(userId) && isImmutable('id');
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for the /users/{userId}/debts/{debtId} document.
+     * @description Rules for the /users/{userId}/debts/{debtId} collection.
      * @path /users/{userId}/debts/{debtId}
-     * @allow (create) User with UID 'user123' can create a debt under their profile.
-     * @deny (create) User with UID 'user123' cannot create a debt under another user's profile ('user456').
-     * @allow (get) User with UID 'user123' can get a debt under their profile.
-     * @deny (get) User with UID 'user123' cannot get a debt under another user's profile ('user456').
-     * @allow (list) User with UID 'user123' can list debts under their profile.
-     * @deny (list) User with UID 'user123' cannot list debts under another user's profile ('user456').
-     * @allow (update) User with UID 'user123' can update a debt under their profile.
-     * @deny (update) User with UID 'user123' cannot update a debt under another user's profile ('user456').
-     * @allow (delete) User with UID 'user123' can delete a debt under their profile.
-     * @deny (delete) User with UID 'user123' cannot delete a debt under another user's profile ('user456').
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create) - User with matching {userId} can create debt under their profile.
+     * @allow (get, list, update, delete) - User with matching {userId} can get, list, update, and delete their own debt.
+     * @deny (create) - User attempts to create debt under another user's profile.
+     * @deny (get, list, update, delete) - User attempts to get, list, update, or delete another user's debt.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/debts/{debtId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == userId && isImmutable('userProfileId');
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for the /users/{userId}/obligations/{obligationId} document.
+     * @description Rules for the /users/{userId}/transactions/{transactionId} collection.
+     * @path /users/{userId}/transactions/{transactionId}
+     * @allow (create) - User with matching {userId} can create transaction under their profile.
+     * @allow (get, list, update, delete) - User with matching {userId} can get, list, update, and delete their own transaction.
+     * @deny (create) - User attempts to create transaction under another user's profile.
+     * @deny (get, list, update, delete) - User attempts to get, list, update, or delete another user's transaction.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/transactions/{transactionId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for the /users/{userId}/obligations/{obligationId} collection.
      * @path /users/{userId}/obligations/{obligationId}
-     * @allow (create) User with UID 'user123' can create an obligation under their profile.
-     * @deny (create) User with UID 'user123' cannot create an obligation under another user's profile ('user456').
-     * @allow (get) User with UID 'user123' can get an obligation under their profile.
-     * @deny (get) User with UID 'user123' cannot get an obligation under another user's profile ('user456').
-     * @allow (list) User with UID 'user123' can list obligations under their profile.
-     * @deny (list) User with UID 'user123' cannot list obligations under another user's profile ('user456').
-     * @allow (update) User with UID 'user123' can update an obligation under their profile.
-     * @deny (update) User with UID 'user123' cannot update an obligation under another user's profile ('user456').
-     * @allow (delete) User with UID 'user123' can delete an obligation under their profile.
-     * @deny (delete) User with UID 'user123' cannot delete an obligation under another user's profile ('user456').
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create) - User with matching {userId} can create obligation under their profile.
+     * @allow (get, list, update, delete) - User with matching {userId} can get, list, update, and delete their own obligation.
+     * @deny (create) - User attempts to create obligation under another user's profile.
+     * @deny (get, list, update, delete) - User attempts to get, list, update, or delete another user's obligation.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/obligations/{obligationId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == userId && isImmutable('userProfileId');
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for the /users/{userId}/budgets/{budgetId} document.
+     * @description Rules for the /users/{userId}/budgets/{budgetId} collection.
      * @path /users/{userId}/budgets/{budgetId}
-     * @allow (create) User with UID 'user123' can create a budget under their profile.
-     * @deny (create) User with UID 'user123' cannot create a budget under another user's profile ('user456').
-     * @allow (get) User with UID 'user123' can get a budget under their profile.
-     * @deny (get) User with UID 'user123' cannot get a budget under another user's profile ('user456').
-     * @allow (list) User with UID 'user123' can list budgets under their profile.
-     * @deny (list) User with UID 'user123' cannot list budgets under another user's profile ('user456').
-     * @allow (update) User with UID 'user123' can update a budget under their profile.
-     * @deny (update) User with UID 'user123' cannot update a budget under another user's profile ('user456').
-     * @allow (delete) User with UID 'user123' can delete a budget under their profile.
-     * @deny (delete) User with UID 'user123' cannot delete a budget under another user's profile ('user456').
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create) - User with matching {userId} can create budget under their profile.
+     * @allow (get, list, update, delete) - User with matching {userId} can get, list, update, and delete their own budget.
+     * @deny (create) - User attempts to create budget under another user's profile.
+     * @deny (get, list, update, delete) - User attempts to get, list, update, or delete another user's budget.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/budgets/{budgetId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == userId && isImmutable('userProfileId');
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for the /users/{userId}/budgets/{budgetId}/budgetItems/{budgetItemId} document.
+     * @description Rules for the /users/{userId}/budgets/{budgetId}/budgetItems/{budgetItemId} collection.
      * @path /users/{userId}/budgets/{budgetId}/budgetItems/{budgetItemId}
-     * @allow (create) User with UID 'user123' can create a budget item under their budget.
-     * @deny (create) User with UID 'user123' cannot create a budget item under another user's budget ('user456').
-     * @allow (get) User with UID 'user123' can get a budget item under their budget.
-     * @deny (get) User with UID 'user123' cannot get a budget item under another user's budget ('user456').
-     * @allow (list) User with UID 'user123' can list budget items under their budget.
-     * @deny (list) User with UID 'user123' cannot list budget items under another user's budget ('user456').
-     * @allow (update) User with UID 'user123' can update a budget item under their budget.
-     * @deny (update) User with UID 'user123' cannot update a budget item under another user's budget ('user456').
-     * @allow (delete) User with UID 'user123' can delete a budget item under their budget.
-     * @deny (delete) User with UID 'user123' cannot delete a budget item under another user's budget ('user456').
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create) - User with matching {userId} can create budgetItem under their budget.
+     * @allow (get, list, update, delete) - User with matching {userId} can get, list, update, and delete their own budgetItem.
+     * @deny (create) - User attempts to create budgetItem under another user's budget.
+     * @deny (get, list, update, delete) - User attempts to get, list, update, or delete another user's budgetItem.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/budgets/{budgetId}/budgetItems/{budgetItemId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && get(/databases/$(database)/documents/users/$(userId)/budgets/$(budgetId)).data.userProfileId == userId;
-      allow update: if isExistingOwner(userId) && get(/databases/$(database)/documents/users/$(userId)/budgets/$(budgetId)).data.userProfileId == userId;
-      allow delete: if isExistingOwner(userId) && get(/databases/$(database)/documents/users/$(userId)/budgets/$(budgetId)).data.userProfileId == userId;
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for the /users/{userId}/investments/{investmentId} document.
+     * @description Rules for the /users/{userId}/budgetCategories/{budgetCategoryId} collection.
+     * @path /users/{userId}/budgetCategories/{budgetCategoryId}
+     * @allow (create) - User with matching {userId} can create budgetCategory under their profile.
+     * @allow (get, list, update, delete) - User with matching {userId} can get, list, update, and delete their own budgetCategory.
+     * @deny (create) - User attempts to create budgetCategory under another user's profile.
+     * @deny (get, list, update, delete) - User attempts to get, list, update, or delete another user's budgetCategory.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/budgetCategories/{budgetCategoryId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for the /users/{userId}/investments/{investmentId} collection.
      * @path /users/{userId}/investments/{investmentId}
-     * @allow (create) User with UID 'user123' can create an investment under their profile.
-     * @deny (create) User with UID 'user123' cannot create an investment under another user's profile ('user456').
-     * @allow (get) User with UID 'user123' can get an investment under their profile.
-     * @deny (get) User with UID 'user123' cannot get an investment under another user's profile ('user456').
-     * @allow (list) User with UID 'user123' can list investments under their profile.
-     * @deny (list) User with UID 'user123' cannot list investments under another user's profile ('user456').
-     * @allow (update) User with UID 'user123' can update an investment under their profile.
-     * @deny (update) User with UID 'user123' cannot update an investment under another user's profile ('user456').
-     * @allow (delete) User with UID 'user123' can delete an investment under their profile.
-     * @deny (delete) User with UID 'user123' cannot delete an investment under another user's profile ('user456').
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create) - User with matching {userId} can create investment under their profile.
+     * @allow (get, list, update, delete) - User with matching {userId} can get, list, update, and delete their own investment.
+     * @deny (create) - User attempts to create investment under another user's profile.
+     * @deny (get, list, update, delete) - User attempts to get, list, update, or delete another user's investment.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/investments/{investmentId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == userId && isImmutable('userProfileId');
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
-
-     /**
-      * @description Rules for the /users/{userId}/budgetCategories/{budgetId} document.
-      * @path /users/{userId}/budgetCategories/{budgetId}
-      * @allow (create) User with UID 'user123' can create a budget under their profile.
-      * @deny (create) User with UID 'user123' cannot create a budget under another user's profile ('user456').
-      * @allow (get) User with UID 'user123' can get a budget under their profile.
-      * @deny (get) User with UID 'user123' cannot get a budget under another user's profile ('user456').
-      * @allow (list) User with UID 'user123' can list budgets under their profile.
-      * @deny (list) User with UID 'user123' cannot list budgets under another user's profile ('user456').
-      * @allow (update) User with UID 'user123' can update a budget under their profile.
-      * @deny (update) User with UID 'user123' cannot update a budget under another user's profile ('user456').
-      * @allow (delete) User with UID 'user123' can delete a budget under their profile.
-      * @deny (delete) User with UID 'user123' cannot delete a budget under another user's profile ('user456').
-      * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
-      */
-     match /users/{userId}/budgetCategories/{budgetId} {
-        allow get: if isOwner(userId);
-        allow list: if isOwner(userId);
-        allow create: if isOwner(userId);
-        allow update: if isExistingOwner(userId);
-        allow delete: if isExistingOwner(userId);
-     }
   }
 }
