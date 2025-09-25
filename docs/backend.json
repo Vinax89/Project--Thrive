@@ -27,6 +27,18 @@
         "lastName": {
           "type": "string",
           "description": "The user's last name."
+        },
+        "income": {
+            "type": "number",
+            "description": "The user's monthly income."
+        },
+        "savings": {
+            "type": "number",
+            "description": "The user's current savings."
+        },
+        "savingsGoal": {
+            "type": "number",
+            "description": "The user's savings goal."
         }
       },
       "required": [
@@ -351,3 +363,6 @@
     }
   }
 }
+
+
+    
