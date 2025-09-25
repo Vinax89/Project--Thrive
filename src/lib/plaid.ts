@@ -1,4 +1,4 @@
-
+import "server-only";
 import { PlaidApi, Configuration } from 'plaid';
 
 // IMPORTANT: Never commit your Plaid secrets to version control.
@@ -15,4 +15,11 @@ const plaidConfig = new Configuration({
   },
 });
 
-export const plaidClient = new PlaidApi(plaidConfig);
+
+declare global {
+  var plaid: PlaidApi | undefined;
+}
+
+export const plaidClient = global.plaid || new PlaidApi(plaidConfig);
+
+if (process.env.NODE_ENV !== 'production') global.plaid = plaidClient;
