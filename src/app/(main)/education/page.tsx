@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { getFinancialEducationContentAction, type FormState } from "./actions";
 import { useUser } from "@/firebase/auth/use-user";
@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { BookOpen, Sparkles } from "lucide-react";
+import { BookOpen, Sparkles, Terminal } from "lucide-react";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -84,4 +84,28 @@ export default function EducationPage() {
               <CardTitle>Your Personalized Content</CardTitle>
               <CardDescription>
                 Recommended articles, guides, and tips will appear here.
-              </d
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+               {state.suggestedContent ? (
+                    <Alert>
+                        <BookOpen className="h-4 w-4" />
+                        <AlertTitle>Content Ready!</AlertTitle>
+                        <AlertDescription className="mt-2 whitespace-pre-wrap font-mono text-sm">
+                            {state.suggestedContent}
+                        </AlertDescription>
+                    </Alert>
+                ) : (
+                    <div className="flex h-[300px] items-center justify-center rounded-md border border-dashed text-center">
+                        <p className="text-sm text-muted-foreground">
+                        {state.message || "Your personalized content is waiting to be generated."}
+                        </p>
+                    </div>
+                )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
