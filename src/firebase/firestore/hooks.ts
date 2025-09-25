@@ -13,8 +13,12 @@ import {
   DocumentReference,
   CollectionReference,
   Query,
+  type WithFieldValue
 } from 'firebase/firestore';
 import { useFirestore } from '../provider';
+import { errorEmitter } from '../error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
+
 
 // Helper to stabilize reference objects
 function useMemoizedRef<T extends DocumentReference | CollectionReference | Query | null>(ref: T): T {
@@ -47,8 +51,12 @@ export function useDoc<T>(path: string | null) {
         setLoading(false);
       },
       (err) => {
-        console.error(err);
-        setError(err);
+        const permissionError = new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'get',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+        setError(permissionError);
         setLoading(false);
       }
     );
@@ -58,7 +66,15 @@ export function useDoc<T>(path: string | null) {
 
   const update = async (newData: Partial<T>) => {
     if (!docRef) return;
-    await updateDoc(docRef, { ...newData, updatedAt: serverTimestamp() });
+    updateDoc(docRef, { ...newData, updatedAt: serverTimestamp() })
+    .catch((serverError) => {
+      const permissionError = new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: newData,
+      } satisfies SecurityRuleContext);
+      errorEmitter.emit('permission-error', permissionError);
+    });
   };
 
   return { data, loading, error, update };
@@ -86,8 +102,12 @@ export function useCollection<T>(path: string | null) {
         setLoading(false);
       },
       (err) => {
-        console.error(err);
-        setError(err);
+        const permissionError = new FirestorePermissionError({
+          path: collectionRef.path,
+          operation: 'list',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+        setError(permissionError);
         setLoading(false);
       }
     );
@@ -95,21 +115,46 @@ export function useCollection<T>(path: string | null) {
     return () => unsubscribe();
   }, [collectionRef]);
 
-  const add = async (newItem: Omit<T, 'id'>) => {
+  const add = async (newItem: WithFieldValue<Omit<T, 'id'>>) => {
     if (!collectionRef) return;
-    await addDoc(collectionRef, { ...newItem, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    const data = { ...newItem, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+    addDoc(collectionRef, data)
+    .catch((serverError) => {
+      const permissionError = new FirestorePermissionError({
+          path: collectionRef.path,
+          operation: 'create',
+          requestResourceData: data,
+      } satisfies SecurityRuleContext);
+      errorEmitter.emit('permission-error', permissionError);
+    });
   };
 
   const update = async (id: string, updatedData: Partial<T>) => {
     if (!path || !firestore) return;
     const docRef = doc(firestore, path, id);
-    await updateDoc(docRef, { ...updatedData, updatedAt: serverTimestamp() });
+    const data = { ...updatedData, updatedAt: serverTimestamp() };
+    updateDoc(docRef, data)
+    .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'update',
+            requestResourceData: data,
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
   
   const remove = async (id: string) => {
     if (!path || !firestore) return;
     const docRef = doc(firestore, path, id);
-    await deleteDoc(docRef);
+    deleteDoc(docRef)
+    .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'delete',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   return { data, loading, error, add, update, remove };
