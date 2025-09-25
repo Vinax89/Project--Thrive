@@ -58,7 +58,7 @@ const menuItems = [
   },
   {
     href: "/net-worth",
-    label: "Net Worth",
+    label: "Balance Sheet",
     icon: Scale,
   },
   {

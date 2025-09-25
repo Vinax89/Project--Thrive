@@ -12,9 +12,8 @@ import {
 } from '@/components/ui/card';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
 import { collection, doc } from 'firebase/firestore';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
-import { ChartTooltipContent } from "@/components/ui/chart";
-import { ArrowDown, ArrowUp, Banknote, Landmark, Scale, TrendingUp } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Banknote, Landmark, Scale, TrendingUp } from 'lucide-react';
 
 export default function NetWorthPage() {
   const { user, loading: userLoading } = useUser();
@@ -50,107 +49,98 @@ export default function NetWorthPage() {
   const totalLiabilities = debts.reduce((sum, debt) => sum + debt.amount, 0);
   const netWorth = totalAssets - totalLiabilities;
 
-  const chartData = [
-    {
-      name: 'Financials',
-      assets: totalAssets,
-      liabilities: totalLiabilities * -1, // Make liabilities negative for stacking
-    },
-  ];
-
   if (loading) {
-    return <p>Calculating Net Worth...</p>;
+    return <p>Calculating Balance Sheet...</p>;
   }
 
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Net Worth</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Balance Sheet</h1>
         <p className="text-muted-foreground">
-          A snapshot of your financial health: Assets vs. Liabilities.
+          A snapshot of your financial health (Assets - Liabilities = Net Worth).
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Assets</CardTitle>
-            <ArrowUp className="h-4 w-4 text-green-500" />
+      <Card className="lg:col-span-3">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Total Net Worth</CardTitle>
+              <CardDescription>The ultimate measure of your financial health.</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+                <Scale className="h-8 w-8 text-muted-foreground" />
+                <span className="text-3xl font-bold">${netWorth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalAssets.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">Savings + Investments</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Liabilities</CardTitle>
-            <ArrowDown className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalLiabilities.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">Total outstanding debt</p>
-          </CardContent>
-        </Card>
-        <Card className="md:col-span-2 lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Worth</CardTitle>
-            <Scale className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${netWorth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">The ultimate measure</p>
-          </CardContent>
-        </Card>
-      </div>
+      </Card>
+      
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <Card className="lg:col-span-3">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
           <CardHeader>
-            <CardTitle>Assets vs. Liabilities</CardTitle>
-            <CardDescription>A visual breakdown of your financial position.</CardDescription>
+            <CardTitle className="flex items-center gap-2"><Banknote className="text-green-500" /> Assets</CardTitle>
+            <CardDescription>What you own.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-               <BarChart data={chartData} layout="vertical" barGap={-15} barSize={30}>
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" hide />
-                <Tooltip cursor={{fill: 'transparent'}} content={<ChartTooltipContent />} />
-                <Bar dataKey="assets" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="liabilities" fill="hsl(var(--chart-5))" radius={[4, 0, 0, 4]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Asset</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell className="font-medium">Cash Savings</TableCell>
+                  <TableCell className="text-right">${totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                </TableRow>
+                {investments.map(inv => (
+                  <TableRow key={inv.id}>
+                    <TableCell>{inv.name} ({inv.type})</TableCell>
+                    <TableCell className="text-right">${(inv.quantity * inv.currentPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <CardHeader className="px-0">
+              <div className="flex justify-between items-center border-t pt-4">
+                <p className="font-semibold">Total Assets</p>
+                <p className="font-semibold text-green-500">${totalAssets.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+            </CardHeader>
           </CardContent>
         </Card>
-         <div className="lg:col-span-2 space-y-6">
-            <Card>
-                <CardHeader className="flex flex-row items-center space-x-4 p-4">
-                    <Banknote className="h-8 w-8 text-muted-foreground" />
-                    <div>
-                        <p className="text-sm text-muted-foreground">Savings</p>
-                        <p className="text-lg font-semibold">${totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                </CardHeader>
-            </Card>
-             <Card>
-                <CardHeader className="flex flex-row items-center space-x-4 p-4">
-                    <TrendingUp className="h-8 w-8 text-muted-foreground" />
-                    <div>
-                        <p className="text-sm text-muted-foreground">Investments</p>
-                        <p className="text-lg font-semibold">${totalInvestmentValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                </CardHeader>
-            </Card>
-             <Card>
-                <CardHeader className="flex flex-row items-center space-x-4 p-4">
-                    <Landmark className="h-8 w-8 text-muted-foreground" />
-                    <div>
-                        <p className="text-sm text-muted-foreground">Debts</p>
-                        <p className="text-lg font-semibold">${totalLiabilities.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                </CardHeader>
-            </Card>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Landmark className="text-red-500" /> Liabilities</CardTitle>
+            <CardDescription>What you owe.</CardDescription>
+          </CardHeader>
+          <CardContent>
+             <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Liability</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {debts.map(debt => (
+                  <TableRow key={debt.id}>
+                    <TableCell>{debt.name} ({debt.type})</TableCell>
+                    <TableCell className="text-right">${(debt.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+             <CardHeader className="px-0">
+              <div className="flex justify-between items-center border-t pt-4">
+                <p className="font-semibold">Total Liabilities</p>
+                <p className="font-semibold text-red-500">${totalLiabilities.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+            </CardHeader>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
