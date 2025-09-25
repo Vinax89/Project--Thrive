@@ -62,7 +62,7 @@ const prompt = ai.definePrompt({
     input: { schema: IncomeViabilityInputSchema },
     output: { schema: IncomeViabilityOutputSchema },
     tools: [getFinancialDataForZip],
-    prompt: `You are an AI financial analyst. Your goal is to calculate the income viability for a user based on their gross income and zip code.
+    prompt: `You are an AI financial analyst performing a 'What If?' scenario analysis. Your goal is to calculate the income viability for a user based on their gross income and zip code.
   
   1. Use the 'getFinancialDataForZip' tool to get the estimated zip-aware federal tax burden and cost of living for the user's location.
   2. Calculate the net income by subtracting the tax burden from the gross income.

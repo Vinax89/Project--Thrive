@@ -21,7 +21,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending} className="w-full">
-      {pending ? 'Calculating...' : 'Calculate Viability'}
+      {pending ? 'Analyzing...' : 'Run Scenario'}
       <Sparkles className="ml-2 h-4 w-4" />
     </Button>
   );
@@ -29,16 +29,19 @@ function SubmitButton() {
 
 function ViabilityResults({ output }: { output: FormState['output'] }) {
   if (!output) return null;
+
+  const grossIncome = output.netIncome + output.taxBurden;
+
   return (
     <Alert>
       <Scale className="h-4 w-4" />
-      <AlertTitle>Viability Assessment</AlertTitle>
+      <AlertTitle>Scenario Analysis</AlertTitle>
       <AlertDescription className="mt-4 space-y-4">
         <p className="font-semibold">{output.assessment}</p>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-2 gap-4 text-sm border-b pb-4">
             <div className="space-y-1">
                 <p className="text-muted-foreground">Gross Income</p>
-                <p className="font-medium">${output.netIncome + output.taxBurden}</p>
+                <p className="font-medium">${grossIncome.toLocaleString()}</p>
             </div>
             <div className="space-y-1">
                 <p className="text-muted-foreground">Est. Zip-Aware Tax</p>
@@ -53,9 +56,9 @@ function ViabilityResults({ output }: { output: FormState['output'] }) {
                 <p className="font-medium text-red-600">-${output.costOfLiving.toLocaleString()}</p>
             </div>
         </div>
-        <div className="border-t pt-4">
+        <div className="pt-0">
             <p className="text-muted-foreground">Est. Disposable Income</p>
-            <p className="text-xl font-bold">${output.disposableIncome.toLocaleString()}</p>
+            <p className="text-2xl font-bold">${output.disposableIncome.toLocaleString()}</p>
             <p className="text-xs text-muted-foreground">Income after taxes and estimated cost of living.</p>
         </div>
       </AlertDescription>
@@ -70,9 +73,9 @@ export default function ViabilityPage() {
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">"What-If" Income Viability</h1>
+        <h1 className="text-3xl font-bold tracking-tight">"What-If" Scenario Simulator</h1>
         <p className="text-muted-foreground">
-          Assess a potential income against zip-aware tax estimates and cost of living.
+          Analyze a potential income against location-based tax and cost of living estimates.
         </p>
       </div>
 
@@ -83,7 +86,7 @@ export default function ViabilityPage() {
               <CardHeader>
                 <CardTitle>Enter Your Scenario</CardTitle>
                 <CardDescription>
-                  Provide a gross annual income and 5-digit US zip code for analysis.
+                  Provide a gross annual income and a 5-digit US zip code for analysis.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -122,7 +125,7 @@ export default function ViabilityPage() {
             <CardHeader>
               <CardTitle>Analysis Results</CardTitle>
               <CardDescription>
-                Your income viability assessment will appear here.
+                Your scenario analysis will appear here.
               </CardDescription>
             </CardHeader>
             <CardContent>
