@@ -8,6 +8,7 @@ export function useUser() {
   const auth = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!auth) {
@@ -23,6 +24,7 @@ export function useUser() {
       },
       (error) => {
         console.error('Auth state change error:', error);
+        setError(error);
         setLoading(false);
       }
     );
@@ -30,5 +32,5 @@ export function useUser() {
     return () => unsubscribe();
   }, [auth]);
 
-  return { user, loading };
+  return { user, loading, error };
 }

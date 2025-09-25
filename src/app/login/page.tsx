@@ -53,43 +53,53 @@ export default function LoginPage() {
       photoURL: user.photoURL,
       createdAt: serverTimestamp(),
       lastLogin: serverTimestamp(),
+      // Initialize with default values
+      income: 5000,
+      savings: 1000,
+      savingsGoal: 10000,
+      earnedBadges: [],
     };
     
-    try {
-        if (isNewUser) {
-            const batch = writeBatch(firestore);
-            
-            // Set user profile
-            batch.set(userRef, userData, { merge: true });
+    if (isNewUser) {
+        const batch = writeBatch(firestore);
+        
+        // Set user profile
+        batch.set(userRef, userData, { merge: true });
 
-            // Seed sample data
-            const transactionsRef = doc(firestore, `users/${user.uid}/transactions/sample`);
-            sampleTransactions.forEach(t => {
-                const newTransactionRef = doc(doc(firestore, 'users', user.uid), 'transactions');
-                batch.set(newTransactionRef, t);
-            });
-            sampleDebts.forEach(d => {
-                const newDebtRef = doc(doc(firestore, 'users', user.uid), 'debts');
-                batch.set(newDebtRef, d);
-            });
-            sampleBudgetCategories.forEach(b => {
-                const newBudgetRef = doc(doc(firestore, 'users', user.uid), 'budgetCategories');
-                batch.set(newBudgetRef, b);
-            });
+        // Seed sample data
+        sampleTransactions.forEach(t => {
+            const newTransactionRef = doc(collection(firestore, `users/${user.uid}/transactions`));
+            batch.set(newTransactionRef, t);
+        });
+        sampleDebts.forEach(d => {
+            const newDebtRef = doc(collection(firestore, `users/${user.uid}/debts`));
+            batch.set(newDebtRef, d);
+        });
+        sampleBudgetCategories.forEach(b => {
+            const newBudgetRef = doc(collection(firestore, `users/${user.uid}/budgetCategories`));
+            batch.set(newBudgetRef, b);
+        });
 
-            await batch.commit();
+        return batch.commit().catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: `users/${user.uid} and subcollections`,
+                operation: 'write',
+                requestResourceData: {note: "Batch write for new user setup."},
+              });
+            errorEmitter.emit('permission-error', permissionError);
+        });
 
-        } else {
-             // For existing users, just update last login
-            await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
-        }
-    } catch (serverError) {
-        const permissionError = new FirestorePermissionError({
-            path: userRef.path,
-            operation: 'write',
-            requestResourceData: userData,
-          });
-        errorEmitter.emit('permission-error', permissionError);
+    } else {
+         // For existing users, just update last login
+        return setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true })
+            .catch((serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: userRef.path,
+                    operation: 'update',
+                    requestResourceData: { lastLogin: 'serverTimestamp' },
+                  });
+                errorEmitter.emit('permission-error', permissionError);
+            });
     }
   };
 

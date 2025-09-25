@@ -5,6 +5,7 @@ import { FirebaseApp } from 'firebase/app';
 import { Firestore, DocumentReference, Query } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { useUser } from './auth/use-user';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -18,9 +19,6 @@ export interface FirebaseContextState {
   firebaseApp: FirebaseApp | null;
   firestore: Firestore | null;
   auth: Auth | null;
-  user: User | null;
-  isUserLoading: boolean;
-  userError: Error | null;
 }
 
 // React Context
@@ -32,38 +30,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isUserLoading, setUserLoading] = useState(true);
-  const [userError, setUserError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (!auth) {
-      setUserLoading(false);
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth,
-      (firebaseUser) => {
-        setUser(firebaseUser);
-        setUserLoading(false);
-      },
-      (error) => {
-        console.error("FirebaseProvider: onAuthStateChanged error:", error);
-        setUserError(error);
-        setUserLoading(false);
-      }
-    );
-    return () => unsubscribe();
-  }, [auth]);
-
   const contextValue = useMemo((): FirebaseContextState => ({
     firebaseApp,
     firestore,
     auth,
-    user,
-    isUserLoading,
-    userError,
-  }), [firebaseApp, firestore, auth, user, isUserLoading, userError]);
+  }), [firebaseApp, firestore, auth]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -98,11 +69,6 @@ export const useFirebaseApp = (): FirebaseApp => {
   const { firebaseApp } = useFirebase();
   if (!firebaseApp) throw new Error("Firebase App is not available.");
   return firebaseApp;
-};
-
-export const useUser = () => {
-    const { user, isUserLoading, userError } = useFirebase();
-    return { user, loading: isUserLoading, error: userError };
 };
 
 

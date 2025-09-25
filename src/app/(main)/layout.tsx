@@ -33,7 +33,10 @@ export default function MainLayout({
   if (loading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p>Loading...</p>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <CircleDollarSign className="h-6 w-6 animate-spin" />
+          <span>Loading Financial Dashboard...</span>
+        </div>
       </div>
     );
   }
@@ -60,7 +63,6 @@ export default function MainLayout({
           <Header />
           <main className="flex-1 overflow-y-auto">
             <div className="container max-w-screen-2xl p-4 md:p-8">
-              <FirebaseErrorListener />
               {children}
             </div>
           </main>
