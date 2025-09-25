@@ -3,12 +3,11 @@
  * @fileOverview An AI agent for calculating income viability based on location, including zip-aware tax calculations.
  *
  * - calculateIncomeViability - A function that calculates viability.
- * - IncomeViabilityInput - The input type for the function.
- * - IncomeViabilityOutput - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { IncomeViabilityInputSchema, IncomeViabilityOutputSchema, type IncomeViabilityInput, type IncomeViabilityOutput } from './income-viability-schema';
 
 // Tool to get financial data based on zip code
 const getFinancialDataForZip = ai.defineTool(
@@ -52,21 +51,6 @@ const getFinancialDataForZip = ai.defineTool(
   }
 );
 
-
-export const IncomeViabilityInputSchema = z.object({
-  grossIncome: z.number().describe('Annual gross income.'),
-  zipCode: z.string().length(5).describe('The 5-digit US zip code.'),
-});
-export type IncomeViabilityInput = z.infer<typeof IncomeViabilityInputSchema>;
-
-export const IncomeViabilityOutputSchema = z.object({
-  taxBurden: z.number().describe('The estimated annual tax burden.'),
-  costOfLiving: z.number().describe('The estimated annual cost of living.'),
-  netIncome: z.number().describe('The net income after taxes.'),
-  disposableIncome: z.number().describe('The income remaining after taxes and cost of living.'),
-  assessment: z.string().describe('A brief, qualitative assessment of the financial viability.'),
-});
-export type IncomeViabilityOutput = z.infer<typeof IncomeViabilityOutputSchema>;
 
 export async function calculateIncomeViability(input: IncomeViabilityInput): Promise<IncomeViabilityOutput> {
   return incomeViabilityFlow(input);
