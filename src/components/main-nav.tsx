@@ -14,6 +14,7 @@ import {
   BarChart3,
   FileSignature,
   CircleDollarSign,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +43,11 @@ const menuItems = [
     href: "/negotiate",
     label: "Negotiate Bill",
     icon: FileSignature,
+  },
+  {
+    href: "/education",
+    label: "Education",
+    icon: BookOpen,
   },
 ];
 
