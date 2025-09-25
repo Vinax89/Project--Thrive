@@ -1,3 +1,6 @@
+
+'use client';
+
 import {
   Sidebar,
   SidebarContent,
@@ -9,12 +12,32 @@ import {
 import { Header } from "@/components/header";
 import { MainNav } from "@/components/main-nav";
 import { CircleDollarSign } from "lucide-react";
+import { useUser } from "@/firebase/auth/use-user";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { user, loading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <Sidebar side="left" variant="sidebar" collapsible="icon">
