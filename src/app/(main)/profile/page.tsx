@@ -53,7 +53,7 @@ export default function ProfilePage() {
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    mode: 'onBlur', // Optimize for performance
+    mode: 'onBlur',
     defaultValues: {
       displayName: '',
       income: 0,
@@ -82,7 +82,8 @@ export default function ProfilePage() {
         title: 'Profile updated!',
         description: 'Your changes have been saved successfully.',
       });
-      form.reset(data, { keepValues: true }); 
+      // Reset the form with the new data, which also resets the `isDirty` state
+      form.reset(data);
     } catch (error) {
       toast({
         variant: 'destructive',
