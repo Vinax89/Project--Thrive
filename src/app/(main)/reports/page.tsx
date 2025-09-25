@@ -1,31 +1,51 @@
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { FileText } from "lucide-react";
+
+'use client';
+
+import { useUser } from '@/firebase/auth/use-user';
+import { useCollection, useDoc } from '@/firebase/firestore/hooks';
+import type { Transaction, UserProfile } from '@/lib/types';
+import { CashFlowLineChart } from '@/components/cash-flow-line-chart';
+import { SpendingBarChart } from '@/components/spending-bar-chart';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function ReportsPage() {
+  const { user } = useUser();
+  const { data: profile } = useDoc<UserProfile>(user ? `users/${user.uid}` : null);
+  const { data: transactions = [], loading } = useCollection<Transaction>(user ? `users/${user.uid}/transactions` : null);
+
+  if (loading) {
+    return <p>Loading reports...</p>
+  }
+  
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
         <p className="text-muted-foreground">
-          Generate and view your financial reports.
+          Analyze your financial performance and trends.
         </p>
       </div>
-      <Card className="flex flex-col items-center justify-center p-12 text-center">
-        <CardHeader>
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
-            <FileText className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <CardTitle>Coming Soon</CardTitle>
-          <CardDescription>
-            Advanced reporting features like income statements, balance sheets, and cash flow statements are on the way.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+         <Card>
+            <CardHeader>
+                <CardTitle>Spending by Category</CardTitle>
+                <CardDescription>Breakdown of your spending for the current month.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <SpendingBarChart transactions={transactions} />
+            </CardContent>
+        </Card>
+         <Card>
+            <CardHeader>
+                <CardTitle>Cash Flow Over Time</CardTitle>
+                <CardDescription>Your income vs. expenses over the past months.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <CashFlowLineChart transactions={transactions} income={profile?.income || 0} />
+            </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
