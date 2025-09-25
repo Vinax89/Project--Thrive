@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview An AI agent for calculating income viability based on location.
+ * @fileOverview An AI agent for calculating income viability based on location, including zip-aware tax calculations.
  *
  * - calculateIncomeViability - A function that calculates viability.
  * - IncomeViabilityInput - The input type for the function.
@@ -14,14 +14,14 @@ import { z } from 'genkit';
 const getFinancialDataForZip = ai.defineTool(
   {
     name: 'getFinancialDataForZip',
-    description: 'Returns the estimated annual federal tax burden and annual cost of living for a given US zip code.',
+    description: 'Returns the estimated annual zip-aware federal tax burden and annual cost of living for a given US zip code and income.',
     inputSchema: z.object({
       zipCode: z.string().describe('The 5-digit US zip code.'),
       grossIncome: z.number().describe('The annual gross income.'),
     }),
     outputSchema: z.object({
-        taxBurden: z.number().describe('Estimated annual federal tax amount.'),
-        costOfLiving: z.number().describe('Estimated annual cost of living.'),
+        taxBurden: z.number().describe('Estimated annual federal tax amount based on income and location.'),
+        costOfLiving: z.number().describe('Estimated annual cost of living based on location.'),
     }),
   },
   async ({ zipCode, grossIncome }) => {
@@ -80,7 +80,7 @@ const prompt = ai.definePrompt({
     tools: [getFinancialDataForZip],
     prompt: `You are an AI financial analyst. Your goal is to calculate the income viability for a user based on their gross income and zip code.
   
-  1. Use the 'getFinancialDataForZip' tool to get the estimated tax burden and cost of living for the user's location.
+  1. Use the 'getFinancialDataForZip' tool to get the estimated zip-aware federal tax burden and cost of living for the user's location.
   2. Calculate the net income by subtracting the tax burden from the gross income.
   3. Calculate the disposable income by subtracting the cost of living from the net income.
   4. Provide a brief, one-sentence qualitative assessment of the viability. For example, if disposable income is highly positive, the assessment could be "This income is highly viable for the selected location." If it's negative, it could be "This income may not be viable without significant budgeting in the selected location."

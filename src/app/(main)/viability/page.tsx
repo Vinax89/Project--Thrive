@@ -40,7 +40,7 @@ function ViabilityResults({ output }: { output: FormState['output'] }) {
                 <p className="font-medium">${output.netIncome + output.taxBurden}</p>
             </div>
             <div className="space-y-1">
-                <p className="text-muted-foreground">Est. Tax Burden</p>
+                <p className="text-muted-foreground">Est. Zip-Aware Tax</p>
                 <p className="font-medium text-red-600">-${output.taxBurden.toLocaleString()}</p>
             </div>
             <div className="space-y-1">
@@ -69,9 +69,9 @@ export default function ViabilityPage() {
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Income Viability</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Income Viability & Tax</h1>
         <p className="text-muted-foreground">
-          Assess your income against estimated taxes and cost of living.
+          Assess your income against zip-aware tax estimates and cost of living.
         </p>
       </div>
 
@@ -82,7 +82,7 @@ export default function ViabilityPage() {
               <CardHeader>
                 <CardTitle>Enter Your Details</CardTitle>
                 <CardDescription>
-                  Provide your gross annual income and zip code for analysis.
+                  Provide your gross annual income and 5-digit US zip code for analysis.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
