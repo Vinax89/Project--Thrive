@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useUser } from '@/firebase/auth/use-user';
 import { useCollection, useDoc } from '@/firebase/firestore/hooks';
 import type { Debt, Investment, UserProfile } from '@/lib/types';
@@ -11,19 +12,21 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, arrayUnion } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Banknote, Landmark, Scale, TrendingUp } from 'lucide-react';
+import { Banknote, Landmark, Scale } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function NetWorthPage() {
   const { user, loading: userLoading } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const userDocRef = useMemoFirebase(
     () => (user && firestore ? doc(firestore, `users/${user.uid}`) : null),
     [user, firestore]
   );
-  const { data: profile, loading: profileLoading } = useDoc<UserProfile>(userDocRef);
+  const { data: profile, loading: profileLoading, update: updateUser } = useDoc<UserProfile>(userDocRef);
 
   const investmentsColRef = useMemoFirebase(
     () => (user && firestore ? collection(firestore, `users/${user.uid}/investments`) : null),
@@ -39,6 +42,19 @@ export default function NetWorthPage() {
   const { data: debts = [], loading: debtsLoading } = useCollection<Debt>(debtsColRef);
 
   const loading = userLoading || profileLoading || investmentsLoading || debtsLoading;
+
+  useEffect(() => {
+    if (!loading && profile) {
+      const earnedBadges = (profile as any)?.earnedBadges || [];
+      if (!earnedBadges.includes('net-worth-novice')) {
+        updateUser({ earnedBadges: arrayUnion('net-worth-novice') });
+        toast({
+          title: "Achievement Unlocked!",
+          description: "You've earned the 'Net Worth Novice' badge!",
+        });
+      }
+    }
+  }, [loading, profile, updateUser, toast]);
 
   const totalSavings = (profile as any)?.savings || 0;
   const totalInvestmentValue = investments.reduce(

@@ -43,4 +43,3 @@ export interface Badge {
       icon: 'Scale',
     },
   ];
-  
