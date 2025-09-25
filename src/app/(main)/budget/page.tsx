@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useMemo } from "react";
 import { useFormStatus } from "react-dom";
 import {
   Card,
@@ -9,10 +9,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useUser } from "@/firebase/auth/use-user";
-import { useCollection, useDoc } from "@/firebase/firestore/hooks";
+import { useCollection } from "@/firebase/firestore/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { BudgetCategory, Debt, Transaction } from "@/lib/types";
@@ -60,13 +61,23 @@ export default function BudgetPage() {
       add({
         name: newCategoryName,
         allocated: parseFloat(newCategoryAllocated),
-        spent: 0,
+        spent: 0, // Spent is calculated dynamically
       });
       setNewCategoryName("");
       setNewCategoryAllocated("");
       setIsDialogOpen(false);
     }
   };
+
+  const categoriesWithSpent = useMemo(() => {
+    return budgetCategories.map(category => {
+        const spent = transactions
+            .filter(t => t.category.toLowerCase() === category.name.toLowerCase())
+            .reduce((sum, t) => sum + t.amount, 0);
+        return { ...category, spent };
+    });
+  }, [budgetCategories, transactions]);
+
 
   const suggestedAllocations = state.suggestedAllocations
     ? JSON.parse(state.suggestedAllocations)
@@ -113,7 +124,7 @@ export default function BudgetPage() {
        <div className="grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-3 space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
-                {budgetCategories.map((category) => {
+                {categoriesWithSpent.map((category) => {
                 const progress = category.allocated > 0 ? (category.spent / category.allocated) * 100 : 0;
                 return (
                     <Card key={category.id}>
@@ -171,9 +182,9 @@ export default function BudgetPage() {
                     </div>
                 )}
                 </CardContent>
-                <CardContent>
+                <CardFooter>
                      <SubmitButton />
-                </CardContent>
+                </CardFooter>
              </form>
            </Card>
         </div>

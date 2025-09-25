@@ -6,7 +6,6 @@ import {
   envelopeBudgeting,
   type EnvelopeBudgetingInput,
 } from "@/ai/flows/envelope-budgeting";
-import type { Debt, Transaction } from "@/lib/types";
 
 const FormSchema = z.object({
   income: z.coerce.number(),
