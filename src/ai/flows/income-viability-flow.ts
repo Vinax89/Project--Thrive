@@ -67,7 +67,7 @@ const prompt = ai.definePrompt({
   1. Use the 'getFinancialDataForZip' tool to get the estimated zip-aware federal tax burden and cost of living for the user's location.
   2. Calculate the net income by subtracting the tax burden from the gross income.
   3. Calculate the disposable income by subtracting the cost of living from the net income.
-  4. Provide a brief, one-sentence qualitative assessment of the viability. For example, if disposable income is highly positive, the assessment could be "This income is highly viable for the selected location." If it's negative, it could be "This income may not be viable without significant budgeting in the selected location."
+  4. Provide a brief, one-sentence qualitative assessment of the viability. For example, if disposable income is highly positive, the assessment could be "This income appears viable for the selected location." If it's negative, it could be "This income may not be viable without significant budgeting in the selected location."
   
   User's Gross Income: {{{grossIncome}}}
   User's Zip Code: {{{zipCode}}}

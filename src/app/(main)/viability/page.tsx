@@ -70,9 +70,9 @@ export default function ViabilityPage() {
   return (
     <div className="flex flex-col gap-8 animate-fade-slide-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Income Viability & Tax</h1>
+        <h1 className="text-3xl font-bold tracking-tight">"What-If" Income Viability</h1>
         <p className="text-muted-foreground">
-          Assess your income against zip-aware tax estimates and cost of living.
+          Assess a potential income against zip-aware tax estimates and cost of living.
         </p>
       </div>
 
@@ -81,9 +81,9 @@ export default function ViabilityPage() {
           <form action={formAction}>
             <Card>
               <CardHeader>
-                <CardTitle>Enter Your Details</CardTitle>
+                <CardTitle>Enter Your Scenario</CardTitle>
                 <CardDescription>
-                  Provide your gross annual income and 5-digit US zip code for analysis.
+                  Provide a gross annual income and 5-digit US zip code for analysis.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
