@@ -24,21 +24,37 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CircleDollarSign } from 'lucide-react';
+import { CircleDollarSign, Loader2 } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { sampleBudgetCategories, sampleDebts, sampleTransactions } from '@/lib/data';
+import { useUser } from '@/firebase/auth/use-user';
 
 export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
+  const { user, loading } = useUser();
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+
+  if(loading || user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <CircleDollarSign className="h-6 w-6 animate-spin" />
+          <span>Loading Financial Dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+
 
   const createUserProfile = async (userCredential: UserCredential) => {
     if (!firestore) return;
@@ -105,52 +121,35 @@ export default function LoginPage() {
   };
 
 
-  const handleEmailPasswordSignUp = async () => {
-    if (!auth) return;
+  const handleAuthAction = async (action: () => Promise<UserCredential>) => {
     setError(null);
+    setIsProcessing(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
+      const userCredential = await action();
       await createUserProfile(userCredential);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
+    } finally {
+        setIsProcessing(false);
     }
   };
 
-  const handleEmailPasswordSignIn = async () => {
-    if (!auth || !firestore) return;
-    setError(null);
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
-      const userRef = doc(firestore, 'users', userCredential.user.uid);
-      
-      setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true })
-        .catch((serverError) => {
-          const permissionError = new FirestorePermissionError({
-            path: userRef.path,
-            operation: 'update',
-            requestResourceData: { lastLogin: 'serverTimestamp' },
-          });
-          errorEmitter.emit('permission-error', permissionError);
-        });
-      
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
 
-  const handleGoogleSignIn = async () => {
+  const handleEmailPasswordSignUp = () => {
     if (!auth) return;
-    setError(null);
+    handleAuthAction(() => createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword));
+  };
+
+  const handleEmailPasswordSignIn = () => {
+    if (!auth || !firestore) return;
+    handleAuthAction(() => signInWithEmailAndPassword(auth, loginEmail, loginPassword));
+  };
+
+  const handleGoogleSignIn = () => {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      await createUserProfile(result);
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message);
-    }
+    handleAuthAction(() => signInWithPopup(auth, provider));
   };
 
   return (
@@ -184,6 +183,7 @@ export default function LoginPage() {
                       placeholder="m@example.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
+                      disabled={isProcessing}
                     />
                   </div>
                   <div className="space-y-2">
@@ -193,19 +193,23 @@ export default function LoginPage() {
                       type="password"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
+                      disabled={isProcessing}
                     />
                   </div>
                   {error && <p className="text-sm text-destructive">{error}</p>}
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
-                  <Button onClick={handleEmailPasswordSignIn} className="w-full">
+                  <Button onClick={handleEmailPasswordSignIn} className="w-full" disabled={isProcessing}>
+                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Login
                   </Button>
                   <Button
                     variant="outline"
                     onClick={handleGoogleSignIn}
                     className="w-full"
+                    disabled={isProcessing}
                   >
+                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Sign In with Google
                   </Button>
                 </CardFooter>
@@ -222,6 +226,7 @@ export default function LoginPage() {
                       placeholder="m@example.com"
                       value={signUpEmail}
                       onChange={(e) => setSignUpEmail(e.target.value)}
+                      disabled={isProcessing}
                     />
                   </div>
                   <div className="space-y-2">
@@ -231,19 +236,23 @@ export default function LoginPage() {
                       type="password"
                       value={signUpPassword}
                       onChange={(e) => setSignUpPassword(e.target.value)}
+                      disabled={isProcessing}
                     />
                   </div>
                   {error && <p className="text-sm text-destructive">{error}</p>}
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
-                  <Button onClick={handleEmailPasswordSignUp} className="w-full">
+                  <Button onClick={handleEmailPasswordSignUp} className="w-full" disabled={isProcessing}>
+                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Sign Up
                   </Button>
                   <Button
                     variant="outline"
                     onClick={handleGoogleSignIn}
                     className="w-full"
+                    disabled={isProcessing}
                   >
+                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Sign Up with Google
                   </Button>
                 </CardFooter>

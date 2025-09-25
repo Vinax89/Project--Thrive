@@ -61,6 +61,7 @@ export function useDoc<T>(memoizedDocRef: (DocumentReference | null) & {__memo?:
           setData(null);
         }
         setLoading(false);
+        setError(null);
       },
       (err: FirestoreError) => {
         const permissionError = new FirestorePermissionError({
@@ -131,6 +132,7 @@ export function useCollection<T>(memoizedCollectionRef: (CollectionReference | Q
         const items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as WithId<T>));
         setData(items);
         setLoading(false);
+        setError(null);
       },
       (err: FirestoreError) => {
         const path = 'path' in memoizedCollectionRef ? memoizedCollectionRef.path : 'unknown path';
