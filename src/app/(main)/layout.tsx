@@ -23,7 +23,7 @@ export default function MainLayout({
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <CircleDollarSign className="h-5 w-5" />
             </div>
-            <span className="text-lg font-headline font-semibold">ChatPay</span>
+            <span className="text-lg font-headline font-semibold">Project: Thrive</span>
           </div>
         </SidebarHeader>
         <SidebarContent>

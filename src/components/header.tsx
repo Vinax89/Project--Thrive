@@ -7,7 +7,7 @@ export function Header() {
       <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
         <div className="flex items-center gap-2 md:hidden">
           <SidebarTrigger />
-          <h1 className="text-lg font-semibold tracking-tight">ChatPay</h1>
+          <h1 className="text-lg font-semibold tracking-tight">Project: Thrive</h1>
         </div>
         <div className="flex flex-1 items-center justify-end">
           <UserNav />
