@@ -78,19 +78,23 @@ export default function BudgetPage() {
 
   const handleAddCategory = async () => {
     if (newCategoryName && newCategoryAllocated) {
+      const isFirstCategory = budgetCategories.length === 0;
+
       await add({
         name: newCategoryName,
         allocated: parseFloat(newCategoryAllocated),
       });
 
       // Check for first budget badge
-      const earnedBadges = (profile as any)?.earnedBadges || [];
-      if (!earnedBadges.includes('first-budget') && budgetCategories.length === 0) {
-         await updateUser({ earnedBadges: arrayUnion('first-budget') });
-         toast({
-            title: "Achievement Unlocked!",
-            description: "You've earned the 'Budget Boss' badge!",
-        });
+      if (isFirstCategory) {
+        const earnedBadges = (profile as any)?.earnedBadges || [];
+        if (!earnedBadges.includes('first-budget')) {
+           await updateUser({ earnedBadges: arrayUnion('first-budget') });
+           toast({
+              title: "Achievement Unlocked!",
+              description: "You've earned the 'Budget Boss' badge!",
+          });
+        }
       }
 
       setNewCategoryName("");
@@ -110,7 +114,7 @@ export default function BudgetPage() {
     });
   }, [budgetCategories, transactions]);
 
-  const totalIncome = 5000; // Placeholder, should come from user profile
+  const totalIncome = (profile as any)?.income || 0;
 
   const suggestedAllocations = useMemo(() => {
     if (!state.suggestedAllocations) return null;
