@@ -79,7 +79,9 @@ export default function ProfilePage() {
   async function onSubmit(data: ProfileFormValues) {
     if (!profile) return;
     try {
-      await update(data);
+      // Omit email from the update data
+      const { email, ...updateData } = data;
+      await update(updateData);
       toast({
         title: 'Profile updated!',
         description: 'Your changes have been saved successfully.',
@@ -138,7 +140,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <FormLabel>Email Address</FormLabel>
                       <FormControl>
-                        <Input placeholder="your@email.com" readOnly {...field} />
+                        <Input placeholder="your@email.com" disabled {...field} />
                       </FormControl>
                        <FormMessage />
                     </FormItem>
