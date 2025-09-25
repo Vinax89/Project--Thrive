@@ -56,7 +56,7 @@ export default function MainLayout({
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <div className="flex h-full flex-col">
+        <div className="flex h-dvh flex-col">
           <Header />
           <main className="flex-1 overflow-y-auto">
             <div className="container max-w-screen-2xl p-4 md:p-8">
