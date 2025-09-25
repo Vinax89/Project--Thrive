@@ -1,102 +1,354 @@
-
 {
   "entities": {
     "UserProfile": {
-      "title": "User Profile",
-      "description": "Represents a user's profile information.",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
       "type": "object",
+      "description": "Represents a user's profile within the ChatPay application.",
       "properties": {
-        "displayName": {
+        "id": {
           "type": "string",
-          "description": "The user's display name."
+          "description": "Unique identifier for the UserProfile entity."
         },
         "email": {
           "type": "string",
-          "format": "email",
-          "description": "The user's email address."
+          "description": "The user's email address.",
+          "format": "email"
         },
-        "photoURL": {
+        "firstName": {
           "type": "string",
-          "format": "uri",
-          "description": "URL of the user's profile picture."
+          "description": "The user's first name."
         },
-        "income": {
-            "type": "number",
-            "description": "The user's monthly income."
-        },
-        "savings": {
-            "type": "number",
-            "description": "The user's total savings."
-        },
-        "savingsGoal": {
-            "type": "number",
-            "description": "The user's savings goal."
+        "lastName": {
+          "type": "string",
+          "description": "The user's last name."
         }
       },
-      "required": ["displayName", "email"]
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName"
+      ]
     },
     "Debt": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Debt",
-      "description": "Represents a single debt item for a user.",
       "type": "object",
+      "description": "Represents a debt owed by the user.",
       "properties": {
-        "name": { "type": "string", "description": "The name of the debt." },
-        "amount": { "type": "number", "description": "The outstanding amount." },
-        "type": { "type": "string", "enum": ["Credit Card", "Loan", "BNPL"] }
-      },
-      "required": ["name", "amount", "type"]
-    },
-    "Transaction": {
-      "title": "Transaction",
-      "description": "Represents a single financial transaction.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string", "description": "The name or description of the transaction." },
-        "amount": { "type": "number", "description": "The transaction amount." },
-        "date": { "type": "string", "format": "date-time", "description": "The date of the transaction." },
-        "category": { "type": "string", "description": "The category of the transaction." }
-      },
-      "required": ["name", "amount", "date", "category"]
-    },
-    "BudgetCategory": {
-        "title": "Budget Category",
-        "description": "Represents a category in the user's budget.",
-        "type": "object",
-        "properties": {
-            "name": { "type": "string", "description": "The name of the budget category." },
-            "allocated": { "type": "number", "description": "The amount allocated to this category." },
-            "spent": { "type": "number", "description": "The amount spent in this category." }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Debt entity."
         },
-        "required": ["name", "allocated", "spent"]
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Debt)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the debt (e.g., Credit Card, Loan)."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The total amount of the debt."
+        },
+        "interestRate": {
+          "type": "number",
+          "description": "The interest rate of the debt."
+        },
+        "minimumPayment": {
+          "type": "number",
+          "description": "The minimum payment required for the debt."
+        }
+      },
+      "required": [
+        "id",
+        "userProfileId",
+        "name",
+        "amount",
+        "interestRate",
+        "minimumPayment"
+      ]
+    },
+    "Obligation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Obligation",
+      "type": "object",
+      "description": "Represents a financial obligation or bill.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Obligation entity."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Obligation)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the obligation (e.g., Rent, Utilities)."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the obligation."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The date the obligation is due.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userProfileId",
+        "name",
+        "amount",
+        "dueDate"
+      ]
+    },
+    "Budget": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Budget",
+      "type": "object",
+      "description": "Represents a user's budget.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Budget entity."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Budget)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the budget (e.g., Monthly Budget)."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The start date of the budget.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The end date of the budget.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userProfileId",
+        "name",
+        "startDate",
+        "endDate"
+      ]
+    },
+    "BudgetItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BudgetItem",
+      "type": "object",
+      "description": "Represents an item within a budget (e.g., Groceries, Entertainment).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BudgetItem entity."
+        },
+        "budgetId": {
+          "type": "string",
+          "description": "Reference to Budget. (Relationship: Budget 1:N BudgetItem)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the budget item."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The allocated amount for the budget item."
+        }
+      },
+      "required": [
+        "id",
+        "budgetId",
+        "name",
+        "amount"
+      ]
+    },
+    "Investment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Investment",
+      "type": "object",
+      "description": "Represents a user's investment.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Investment entity."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Investment)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the investment (e.g., Stock, Bond)."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of investment (e.g., Stock, Bond, Mutual Fund)."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The quantity of the investment."
+        },
+        "purchasePrice": {
+          "type": "number",
+          "description": "The price at which the investment was purchased."
+        },
+        "currentPrice": {
+          "type": "number",
+          "description": "The current price of the investment."
+        }
+      },
+      "required": [
+        "id",
+        "userProfileId",
+        "name",
+        "type",
+        "quantity",
+        "purchasePrice",
+        "currentPrice"
+      ]
     }
   },
   "auth": {
-    "providers": ["google.com", "password"]
+    "providers": [
+      "password",
+      "anonymous"
+    ]
   },
   "firestore": {
-    "/users/{userId}": {
-      "schema": {
-        "$ref": "#/entities/UserProfile"
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information.  Owned by the user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
       },
-      "description": "Stores public information about a user."
-    },
-    "/users/{userId}/debts/{debtId}": {
-      "schema": {
-        "$ref": "#/entities/Debt"
+      {
+        "path": "/users/{userId}/debts/{debtId}",
+        "definition": {
+          "entityName": "Debt",
+          "schema": {
+            "$ref": "#/backend/entities/Debt"
+          },
+          "description": "Stores debt information for a user. Owned by the user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "debtId",
+              "description": "The unique identifier for the debt."
+            }
+          ]
+        }
       },
-      "description": "Stores a user's individual debt items."
-    },
-    "/users/{userId}/transactions/{transactionId}": {
-      "schema": {
-        "$ref": "#/entities/Transaction"
+      {
+        "path": "/users/{userId}/obligations/{obligationId}",
+        "definition": {
+          "entityName": "Obligation",
+          "schema": {
+            "$ref": "#/backend/entities/Obligation"
+          },
+          "description": "Stores obligation information for a user. Owned by the user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "obligationId",
+              "description": "The unique identifier for the obligation."
+            }
+          ]
+        }
       },
-      "description": "Stores a user's financial transactions."
-    },
-    "/users/{userId}/budgetCategories/{categoryId}": {
-        "schema": {
-          "$ref": "#/entities/BudgetCategory"
-        },
-        "description": "Stores a user's budget categories."
+      {
+        "path": "/users/{userId}/budgets/{budgetId}",
+        "definition": {
+          "entityName": "Budget",
+          "schema": {
+            "$ref": "#/backend/entities/Budget"
+          },
+          "description": "Stores budget information for a user. Owned by the user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "budgetId",
+              "description": "The unique identifier for the budget."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/budgets/{budgetId}/budgetItems/{budgetItemId}",
+        "definition": {
+          "entityName": "BudgetItem",
+          "schema": {
+            "$ref": "#/backend/entities/BudgetItem"
+          },
+          "description": "Stores budget item information for a user. Owned by the user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "budgetId",
+              "description": "The unique identifier for the budget."
+            },
+            {
+              "name": "budgetItemId",
+              "description": "The unique identifier for the budget item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/investments/{investmentId}",
+        "definition": {
+          "entityName": "Investment",
+          "schema": {
+            "$ref": "#/backend/entities/Investment"
+          },
+          "description": "Stores investment information for a user. Owned by the user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "investmentId",
+              "description": "The unique identifier for the investment."
+            }
+          ]
+        }
       }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure Authorization Independence, QAPs, and clarity. User data is stored under `/users/{userId}` for private data, following path-based ownership. Each user has their own `Debt`, `Obligation`, `Budget`, `BudgetItem`, and `Investment` data, which are stored as subcollections under the user's document, thus providing clear ownership and simplifying security rules. The data for each collection is stored under the specific user's ID to ensure data isolation and authorization independence. This prevents needing `get()` calls in security rules to authorize ownership since the path inherently defines ownership. This also supports QAPs because listing documents under a specific user ID is straightforward and secure, ensuring that users can only access their own data."
   }
 }
