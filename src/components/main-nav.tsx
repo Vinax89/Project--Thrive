@@ -25,6 +25,7 @@ import {
   Trophy,
   Percent,
   Calculator,
+  Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -108,6 +109,11 @@ const menuItems = [
     href: "/tax",
     label: "Tax Optimizer",
     icon: Percent,
+  },
+   {
+    href: "/data",
+    label: "Data Management",
+    icon: Database,
   },
    {
     href: "/profile",
